@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.view.MotionEvent
 import android.view.View
+import android.graphics.RectF
 
 enum class GameState {
     START,
@@ -18,7 +19,10 @@ class GameView(context: Context?) : View(context) {
     private val paint = Paint()
 
     private val paintText = Paint()
+    private val paintButton = Paint()
     private var gameState = GameState.START
+
+    private val playButton = RectF()
     private var ballX = 200f
     private var ballY = 300f
     private val radius = 40f
@@ -28,9 +32,12 @@ class GameView(context: Context?) : View(context) {
     private var speedY = 8f
 
     init {
+
         paint.color = Color.RED
         paintText.color = Color.BLUE
+        paintButton.color = Color.GREEN
     }
+
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -40,34 +47,46 @@ class GameView(context: Context?) : View(context) {
             GameState.PAUSED -> drawPauseScreen(canvas)
             GameState.GAME_OVER -> drawGameOverScreen(canvas)
         }
+    }
 
-
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        playButton.set(w / 2f - 100f, h / 2f - 50f, w / 2f + 100f, h / 2f + 50f)
     }
 
     private fun drawStartScreen(canvas: Canvas) {
+        canvas.drawColor(Color.WHITE)
         paintText.textSize = 60F
         paintText.textAlign = Paint.Align.CENTER
+        playButton.centerX()
         canvas.drawText("MINI-JEU", width / 2f, height * 0.3F, paintText)
-        canvas.drawText("Toucher pour jouer", width / 2f, height * 0.5F, paintText)
+        canvas.drawRoundRect(playButton, width / 2f, height * 0.5F, paintButton)
+
     }
 
     private fun drawGame(canvas: Canvas) {
-        canvas.drawCircle(ballX, ballY, radius, paint)
+        canvas.drawColor(Color.WHITE)
+        canvas.drawRect(ballX - radius, ballY - radius, ballX + radius, ballY + radius, paint)
+
     }
 
     private fun drawPauseScreen(canvas: Canvas) {
+        canvas.drawColor(Color.WHITE)
         paintText.textSize = 60F
         paintText.textAlign = Paint.Align.CENTER
         canvas.drawText("PAUSE", width / 2f, height * 0.3F, paintText)
         paintText.textSize = 40F
         canvas.drawText("Toucher pour reprendre", width / 2f, height * 0.5F, paintText)
+
     }
 
     private fun drawGameOverScreen(canvas: Canvas) {
+        canvas.drawColor(Color.WHITE)
         paintText.textSize = 60F
         paintText.textAlign = Paint.Align.CENTER
         canvas.drawText("GAME OVER", width / 2f, height * 0.3F, paintText)
         canvas.drawText("Toucher pour rejouer", width / 2f, height * 0.5F, paintText)
+
     }
 
     private fun update() {
@@ -126,7 +145,6 @@ class GameView(context: Context?) : View(context) {
             GameState.PLAYING -> {
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     ballX = event.x
-                    ballY = event.y
                     gameState = GameState.PAUSED
                 }
             }
