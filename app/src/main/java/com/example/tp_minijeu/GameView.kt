@@ -32,6 +32,11 @@ class GameView(context: Context) : View(context) {
     // Inclinaison filtrée, mise à jour par MainActivity (accéléromètre)
     var tilt = 0f
 
+    // Niveau sonore du micro entre 0 et 1, mis à jour par MainActivity (thread du micro)
+    @Volatile var micLevel = 0f
+    // false si l'autorisation du micro est refusée ou si le micro est indisponible
+    @Volatile var micAvailable = false
+
     private val d = resources.displayMetrics.density   // 1dp en pixels
     private val taille = 0.6f                          // taille du bonhomme
     private val s = d * taille                         // échelle du bonhomme en pixels
@@ -42,6 +47,12 @@ class GameView(context: Context) : View(context) {
     private val baseScroll = 220f * d     // vitesse de descente
     private val maxDifficulty = 1f        // 1f = vitesse constante
     private val secondsToMax = 45f
+
+    // ---------- Réglages du micro ----------
+    private val micThreshold = 0.7f       // position de la barre (0..1) : au-dessus, la vitesse augmente
+    private val speedStep = 0.1f          // +10 % de vitesse à chaque dépassement
+    private val speedCooldownTime = 1f    // délai mini (s) entre deux augmentations
+    private val maxSpeed = 3f             // vitesse maximum (x3)
 
     // ---------- État du jeu ----------
     private var gameState = GameState.START
@@ -58,6 +69,10 @@ class GameView(context: Context) : View(context) {
     private var gameOverAt = 0L
     private var spawnTimer = 1.5f
     private var sprayAcc = 0f
+    private var micDisplay = 0f           // valeur affichée par la jauge (= valeur réelle du micro)
+    private var speedMultiplier = 1f      // vitesse actuelle (ne redescend jamais pendant une partie)
+    private var speedCooldown = 0f
+    private var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
 
     private class Obstacle(var x: Float, var y: Float, val isTree: Boolean, val size: Float) {
         val shape = FloatArray(8) { 0.8f + Random.nextFloat() * 0.35f }   // forme du rocher
@@ -144,6 +159,16 @@ class GameView(context: Context) : View(context) {
     private val buttonAlt = fill("#E3F2FD")
     private val buttonAltText = text("#1E88E5", 20f, Paint.Align.CENTER)
 
+    // Jauge du micro
+    private val gaugeTrack = fill("#CFDCE8")
+    private val gaugeCalm = fill("#43A047")
+    private val gaugeLoud = fill("#E53935")
+    private val gaugeMark = line("#1A3A5C", 2f * d)
+    private val micBody = line("#1A3A5C", 2f * d)
+    private val speedText = text("#1A3A5C", 17f, Paint.Align.RIGHT)
+    private val speedUpText = text("#E53935", 19f, Paint.Align.RIGHT)
+    private val micOffText = text("#78909C", 14f, Paint.Align.LEFT)
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
@@ -218,6 +243,9 @@ class GameView(context: Context) : View(context) {
         scrollSpeed = baseScroll
         spawnTimer = 1.5f
         sprayAcc = 0f
+        speedMultiplier = 1f
+        speedCooldown = 0f
+        speedFlash = 0f
         velocity = 0f
         posX = width / 2f
     }
@@ -230,8 +258,12 @@ class GameView(context: Context) : View(context) {
         else ((now - lastTime) / 1_000_000_000f).coerceAtMost(0.05f)
         lastTime = now
 
+        // La jauge affiche la valeur réelle reçue du micro
+        micDisplay = micLevel
+
         if (gameState == GameState.PAUSED) return   // tout est figé
         clock += dt
+        if (speedFlash > 0f) speedFlash -= dt
 
         if (gameState == GameState.PLAYING) updatePlaying(dt)
 
@@ -251,7 +283,15 @@ class GameView(context: Context) : View(context) {
     private fun updatePlaying(dt: Float) {
         gameTime += dt
         val difficulty = minOf(1f + gameTime / secondsToMax * (maxDifficulty - 1f), maxDifficulty)
-        scrollSpeed = baseScroll * difficulty
+
+        // Son au-dessus de la barre : la vitesse augmente définitivement (jusqu'à la fin de la partie)
+        if (speedCooldown > 0f) speedCooldown -= dt
+        if (micAvailable && micLevel > micThreshold && speedCooldown <= 0f && speedMultiplier < maxSpeed) {
+            speedMultiplier = minOf(speedMultiplier + speedStep, maxSpeed)
+            speedCooldown = speedCooldownTime
+            speedFlash = 0.6f
+        }
+        scrollSpeed = baseScroll * difficulty * speedMultiplier
 
         // Zone morte : petites inclinaisons ignorées, puis la vitesse repart de 0 au-delà du seuil
         val effectiveTilt = if (abs(tilt) < deadZone) 0f else tilt - sign(tilt) * deadZone
@@ -291,7 +331,7 @@ class GameView(context: Context) : View(context) {
         spawnTimer -= dt
         if (spawnTimer <= 0f) {
             spawnObstacle()
-            spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / difficulty
+            spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / (difficulty * speedMultiplier)
         }
 
         if (hitsObstacle(baseY, s)) {
@@ -363,7 +403,7 @@ class GameView(context: Context) : View(context) {
 
         // Obstacles derrière le bonhomme, puis devant (effet de profondeur)
         val limit = baseY + 55f * s
-        for (o in obstacles) if (o.y <= limit) drawObstacle(c, o)
+        for (o in obstacles) if (o.y <= limit) drawObstacleWrapped(c, o)
 
         for (p in particles) {
             spray.alpha = (p.life / 0.5f * 220).toInt().coerceIn(0, 255)
@@ -378,7 +418,7 @@ class GameView(context: Context) : View(context) {
             drawPlayer(c, cx, baseY, lean)
         }
 
-        for (o in obstacles) if (o.y > limit) drawObstacle(c, o)
+        for (o in obstacles) if (o.y > limit) drawObstacleWrapped(c, o)
 
         drawFallingSnow(c)
     }
@@ -401,7 +441,7 @@ class GameView(context: Context) : View(context) {
 
     // ======================= INTERFACE =======================
     private fun drawHud(c: Canvas) {
-        // Score en haut à gauche (comme sur le prototype)
+        // Score en haut à gauche
         val label = "${score()} m"
         val tw = scoreText.measureText(label)
         val left = 16f * d
@@ -423,6 +463,60 @@ class GameView(context: Context) : View(context) {
         c.drawCircle(bx, by, pr, pill)
         c.drawRect(bx - 7f * d, by - 9f * d, bx - 2.5f * d, by + 9f * d, hudIcon)
         c.drawRect(bx + 2.5f * d, by - 9f * d, bx + 7f * d, by + 9f * d, hudIcon)
+
+        drawMicGauge(c)
+    }
+
+    /** Jauge du micro en bas de l'écran : volume réel, barre de seuil et vitesse actuelle. */
+    private fun drawMicGauge(c: Canvas) {
+        val left = 16f * d
+        val right = width - 16f * d
+        val bottom = height - 32f * d
+        val top = bottom - 44f * d
+        val rad = 22f * d
+        tmpRect.set(left, top + 3f * d, right, bottom + 3f * d)
+        c.drawRoundRect(tmpRect, rad, rad, pillShadow)
+        tmpRect.set(left, top, right, bottom)
+        c.drawRoundRect(tmpRect, rad, rad, pill)
+
+        // Icône micro
+        val mx = left + 24f * d
+        val my = (top + bottom) / 2f
+        tmpRect.set(mx - 4f * d, my - 11f * d, mx + 4f * d, my + 3f * d)
+        c.drawRoundRect(tmpRect, 4f * d, 4f * d, hudIcon)
+        tmpRect.set(mx - 8f * d, my - 6f * d, mx + 8f * d, my + 7f * d)
+        c.drawArc(tmpRect, 0f, 180f, false, micBody)
+        c.drawLine(mx, my + 7f * d, mx, my + 11f * d, micBody)
+
+        // Vitesse actuelle, à droite (en rouge juste après une accélération)
+        val speedLabel = "x%.1f".format(speedMultiplier)
+        val sp = if (speedFlash > 0f) speedUpText else speedText
+        c.drawText(speedLabel, right - 16f * d, my + 6f * d, sp)
+
+        val barLeft = left + 44f * d
+        val barRight = right - 76f * d
+
+        if (!micAvailable) {
+            c.drawText("Micro non autorisé", barLeft, my + 5f * d, micOffText)
+            return
+        }
+
+        // Barre : volume réel
+        val loud = micDisplay > micThreshold
+        val barTop = my - 6f * d
+        val barBottom = my + 6f * d
+        val barRad = 6f * d
+        tmpRect.set(barLeft, barTop, barRight, barBottom)
+        c.drawRoundRect(tmpRect, barRad, barRad, gaugeTrack)
+        val level = micDisplay.coerceIn(0f, 1f)
+        if (level > 0.01f) {
+            tmpRect.set(barLeft, barTop, barLeft + (barRight - barLeft) * level, barBottom)
+            c.drawRoundRect(tmpRect, barRad, barRad, if (loud) gaugeLoud else gaugeCalm)
+        }
+
+        // Repère du seuil
+        val sx = barLeft + (barRight - barLeft) * micThreshold
+        c.drawLine(sx, barTop - 5f * d, sx, barBottom + 5f * d, gaugeMark)
     }
 
     private fun drawCard(c: Canvas, r: RectF) {
@@ -499,11 +593,13 @@ class GameView(context: Context) : View(context) {
         val isTree = Random.nextBoolean()
         val size = if (isTree) (28f + Random.nextFloat() * 16f) * d
         else (22f + Random.nextFloat() * 16f) * d
-        val x = size + Random.nextFloat() * maxOf(1f, width - 2 * size)
+        // N'importe où sur la largeur, y compris à cheval sur un bord
+        val x = Random.nextFloat() * width
         obstacles.add(Obstacle(x, height + 3f * size, isTree, size))
     }
 
     private fun hitsObstacle(baseY: Float, s: Float): Boolean {
+        // On teste aussi les copies du bonhomme à gauche/droite : couvre les obstacles à cheval sur un bord
         for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
             val px = posX + ox
             val body = listOf(
@@ -522,8 +618,14 @@ class GameView(context: Context) : View(context) {
         return false
     }
 
-    private fun drawObstacle(c: Canvas, o: Obstacle) {
-        if (o.isTree) drawTree(c, o.x, o.y, o.size) else drawRock(c, o)
+    /** Dessine l'obstacle, et sa copie de l'autre côté de l'écran s'il dépasse d'un bord. */
+    private fun drawObstacleWrapped(c: Canvas, o: Obstacle) {
+        val w = width.toFloat()
+        for (ox in floatArrayOf(0f, -w, w)) {
+            val x = o.x + ox
+            if (x < -2f * o.size || x > w + 2f * o.size) continue
+            if (o.isTree) drawTree(c, x, o.y, o.size) else drawRock(c, o, x)
+        }
     }
 
     private fun drawTree(c: Canvas, x: Float, y: Float, s: Float) {
@@ -562,8 +664,8 @@ class GameView(context: Context) : View(context) {
         }
     }
 
-    private fun drawRock(c: Canvas, o: Obstacle) {
-        val x = o.x; val y = o.y; val r = o.size
+    private fun drawRock(c: Canvas, o: Obstacle, x: Float) {
+        val y = o.y; val r = o.size
         // Ombre
         c.drawOval(x - 0.8f * r, y + 0.1f * r, x + 1.3f * r, y + 0.55f * r, shadow)
 
