@@ -16,6 +16,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.math.sin
 import kotlin.random.Random
@@ -23,7 +24,8 @@ import kotlin.random.Random
 enum class GameState {
     START,
     PLAYING,
-    PAUSED,
+    PAUSED,      // pause en jeu = écran de paramètres avec "Reprendre" / "Menu"
+    SETTINGS,    // paramètres ouverts depuis le menu de lancement
     GAME_OVER
 }
 
@@ -32,7 +34,7 @@ class GameView(context: Context) : View(context) {
     // Inclinaison filtrée, mise à jour par MainActivity (accéléromètre)
     var tilt = 0f
 
-    // Niveau sonore du micro entre 0 et 1, mis à jour par MainActivity (thread du micro)
+    // Niveau sonore brut du micro entre 0 et 1, mis à jour par MainActivity (thread du micro)
     @Volatile var micLevel = 0f
     // false si l'autorisation du micro est refusée ou si le micro est indisponible
     @Volatile var micAvailable = false
@@ -42,7 +44,7 @@ class GameView(context: Context) : View(context) {
     private val s = d * taille                         // échelle du bonhomme en pixels
 
     // ---------- Réglages du jeu ----------
-    private val speedFactor = 75f * d     // sensibilité gauche/droite
+    private val speedFactor = 75f * d     // sensibilité gauche/droite de base (= 100 %)
     private val deadZone = 0.6f           // inclinaison ignorée (m/s²) : le téléphone n'est jamais parfaitement à plat
     private val baseScroll = 220f * d     // vitesse de descente
     private val maxDifficulty = 1f        // 1f = vitesse constante
@@ -53,6 +55,20 @@ class GameView(context: Context) : View(context) {
     private val speedStep = 0.1f          // +10 % de vitesse à chaque dépassement
     private val speedCooldownTime = 1f    // délai mini (s) entre deux augmentations
     private val maxSpeed = 3f             // vitesse maximum (x3)
+
+    private val micAttack = 8f            // vitesse de montée de la jauge (plus haut = plus réactif)
+    private val micRelease = 2.5f         // vitesse de descente de la jauge (plus bas = plus doux)
+
+    // ---------- Paramètres modifiables par le joueur (sauvegardés) ----------
+    private val moveMin = 0.25f; private val moveMax = 2f     // sensibilité mouvement : 25 % .. 200 %
+    private val micMin = 0.5f;   private val micMax = 2f      // sensibilité micro : 50 % .. 200 %
+    private val prefs = context.getSharedPreferences("reglages", Context.MODE_PRIVATE)
+    private var moveSens = prefs.getFloat("moveSens", 1f)
+    private var micSens = prefs.getFloat("micSens", 1f)
+
+    private fun saveSettings() {
+        prefs.edit().putFloat("moveSens", moveSens).putFloat("micSens", micSens).apply()
+    }
 
     // ---------- État du jeu ----------
     private var gameState = GameState.START
@@ -69,10 +85,11 @@ class GameView(context: Context) : View(context) {
     private var gameOverAt = 0L
     private var spawnTimer = 1.5f
     private var sprayAcc = 0f
-    private var micDisplay = 0f           // valeur affichée par la jauge (= valeur réelle du micro)
+    private var micDisplay = 0f           // niveau du micro après sensibilité (affiché par la jauge)
     private var speedMultiplier = 1f      // vitesse actuelle (ne redescend jamais pendant une partie)
     private var speedCooldown = 0f
     private var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
+    private var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 micro
 
     private class Obstacle(var x: Float, var y: Float, val isTree: Boolean, val size: Float) {
         val shape = FloatArray(8) { 0.8f + Random.nextFloat() * 0.35f }   // forme du rocher
@@ -85,15 +102,25 @@ class GameView(context: Context) : View(context) {
     private val airFlakes = mutableListOf<Flake>()
     private val trail = ArrayDeque<PointF>()
 
-    // ---------- Boutons (zones calculées dans onSizeChanged) ----------
+    // ---------- Zones des boutons et du panneau (calculées dans onSizeChanged) ----------
     private val playButton = RectF()
-    private val pauseButton = RectF()
-    private val resumeButton = RectF()
-    private val pauseMenuButton = RectF()
+    private val settingsButton = RectF()
     private val replayButton = RectF()
     private val overMenuButton = RectF()
-    private val pauseCard = RectF()
     private val overCard = RectF()
+
+    private val pauseCard = RectF()       // panneau en jeu (2 boutons)
+    private val settingsCard = RectF()    // panneau depuis le menu (1 bouton)
+    private val primaryButton = RectF()   // "Reprendre" ou "Retour"
+    private val secondaryButton = RectF() // "Menu" (seulement en jeu)
+    private val defaultsButton = RectF()  // "Valeurs par défaut"
+    private var panelTop = 0f
+    private var trackLeft = 0f
+    private var trackRight = 0f
+    private var moveY = 0f                // hauteur du curseur mouvement
+    private var micY = 0f                 // hauteur du curseur micro
+    private var previewY = 0f             // hauteur de la jauge de test du micro
+
     private val tmpRect = RectF()         // réutilisé pour éviter d'allouer pendant le dessin
 
     // ---------- Pinceaux ----------
@@ -158,6 +185,15 @@ class GameView(context: Context) : View(context) {
     private val buttonText = text("#FFFFFF", 20f, Paint.Align.CENTER)
     private val buttonAlt = fill("#E3F2FD")
     private val buttonAltText = text("#1E88E5", 20f, Paint.Align.CENTER)
+    private val hintText = text("#1A3A5C", 15f, Paint.Align.CENTER)
+
+    // Paramètres
+    private val labelText = text("#1A3A5C", 16f, Paint.Align.LEFT)
+    private val valueText = text("#1E88E5", 16f, Paint.Align.RIGHT)
+    private val linkText = text("#1E88E5", 15f, Paint.Align.CENTER)
+    private val sliderFill = fill("#1E88E5")
+    private val thumbFill = fill("#FFFFFF")
+    private val thumbEdge = line("#1E88E5", 3f * d)
 
     // Jauge du micro
     private val gaugeTrack = fill("#CFDCE8")
@@ -190,24 +226,33 @@ class GameView(context: Context) : View(context) {
         baseY = maxOf(h * 0.25f, 80f * d)
         if (posX < 0f) posX = w / 2f
 
-        // Boutons : au moins 44-48dp de haut, espacés (fat finger), dans la moitié basse quand c'est possible
         val cx = w / 2f
         val cy = h * 0.45f
-        val hw = minOf(140f * d, w / 2f - 20f * d)
-        val bw = hw * 0.65f
+        val hw = minOf(160f * d, w / 2f - 20f * d)
+        val bw = minOf(140f * d, w / 2f - 20f * d) * 0.65f
 
         // Accueil
         playButton.set(cx - bw, h * 0.62f, cx + bw, h * 0.62f + 56f * d)
-        // En jeu : pause en haut à droite (action rare, hors de portée pour éviter les pauses accidentelles)
-        pauseButton.set(w - 64f * d, 34f * d, w - 16f * d, 82f * d)
-        // Pause
-        pauseCard.set(cx - hw, cy - 115f * d, cx + hw, cy + 115f * d)
-        resumeButton.set(cx - bw, cy - 20f * d, cx + bw, cy + 24f * d)
-        pauseMenuButton.set(cx - bw, cy + 44f * d, cx + bw, cy + 88f * d)
+        settingsButton.set(cx - bw, h * 0.62f + 72f * d, cx + bw, h * 0.62f + 128f * d)
+
         // Fin de partie
-        overCard.set(cx - hw, cy - 115f * d, cx + hw, cy + 170f * d)
+        val ow = minOf(140f * d, w / 2f - 20f * d)
+        overCard.set(cx - ow, cy - 115f * d, cx + ow, cy + 170f * d)
         replayButton.set(cx - bw, cy + 48f * d, cx + bw, cy + 92f * d)
         overMenuButton.set(cx - bw, cy + 112f * d, cx + bw, cy + 156f * d)
+
+        // Panneau Pause / Paramètres
+        panelTop = maxOf(40f * d, h / 2f - 205f * d)
+        trackLeft = cx - hw + 24f * d
+        trackRight = cx + hw - 24f * d
+        moveY = panelTop + 120f * d
+        micY = panelTop + 190f * d
+        previewY = panelTop + 218f * d
+        defaultsButton.set(cx - 90f * d, panelTop + 235f * d, cx + 90f * d, panelTop + 267f * d)
+        primaryButton.set(cx - bw, panelTop + 285f * d, cx + bw, panelTop + 329f * d)
+        secondaryButton.set(cx - bw, panelTop + 345f * d, cx + bw, panelTop + 389f * d)
+        pauseCard.set(cx - hw, panelTop, cx + hw, panelTop + 410f * d)
+        settingsCard.set(cx - hw, panelTop, cx + hw, panelTop + 350f * d)
     }
 
     private fun score() = (distance / (20f * d)).toInt()
@@ -231,6 +276,7 @@ class GameView(context: Context) : View(context) {
         removeCallbacks(gameLoop)
         // L'appli passe en arrière-plan (appel, notification...) : on ne fait pas perdre la partie
         if (gameState == GameState.PLAYING) gameState = GameState.PAUSED
+        dragging = 0
         invalidate()
     }
 
@@ -258,10 +304,12 @@ class GameView(context: Context) : View(context) {
         else ((now - lastTime) / 1_000_000_000f).coerceAtMost(0.05f)
         lastTime = now
 
-        // La jauge affiche la valeur réelle reçue du micro
-        micDisplay = micLevel
+        // Niveau du micro après sensibilité : c'est cette valeur que la jauge affiche
+        val micTarget = (micLevel * micSens).coerceIn(0f, 1f)
+        val k = if (micTarget > micDisplay) micAttack else micRelease
+        micDisplay += (micTarget - micDisplay) * minOf(1f, dt * k)
 
-        if (gameState == GameState.PAUSED) return   // tout est figé
+        if (gameState == GameState.PAUSED) return   // tout est figé (la jauge de test reste active)
         clock += dt
         if (speedFlash > 0f) speedFlash -= dt
 
@@ -286,7 +334,7 @@ class GameView(context: Context) : View(context) {
 
         // Son au-dessus de la barre : la vitesse augmente définitivement (jusqu'à la fin de la partie)
         if (speedCooldown > 0f) speedCooldown -= dt
-        if (micAvailable && micLevel > micThreshold && speedCooldown <= 0f && speedMultiplier < maxSpeed) {
+        if (micAvailable && micDisplay > micThreshold && speedCooldown <= 0f && speedMultiplier < maxSpeed) {
             speedMultiplier = minOf(speedMultiplier + speedStep, maxSpeed)
             speedCooldown = speedCooldownTime
             speedFlash = 0.6f
@@ -296,8 +344,8 @@ class GameView(context: Context) : View(context) {
         // Zone morte : petites inclinaisons ignorées, puis la vitesse repart de 0 au-delà du seuil
         val effectiveTilt = if (abs(tilt) < deadZone) 0f else tilt - sign(tilt) * deadZone
 
-        // Déplacement gauche/droite avec passage d'un bord à l'autre
-        velocity = -effectiveTilt * speedFactor
+        // Déplacement gauche/droite (avec la sensibilité choisie) et passage d'un bord à l'autre
+        velocity = -effectiveTilt * speedFactor * moveSens
         posX += velocity * dt
         if (width > 0) posX = ((posX % width) + width) % width
 
@@ -349,6 +397,7 @@ class GameView(context: Context) : View(context) {
             GameState.START -> drawStartScreen(canvas)
             GameState.PLAYING -> drawGame(canvas)
             GameState.PAUSED -> drawPauseScreen(canvas)
+            GameState.SETTINGS -> drawSettingsScreen(canvas)
             GameState.GAME_OVER -> drawGameOverScreen(canvas)
         }
     }
@@ -360,24 +409,33 @@ class GameView(context: Context) : View(context) {
         c.drawText("Record : $best m", cx, height * 0.18f + 36f * d, infoText)
         drawPlayer(c, cx, height * 0.42f, 0f)
         drawButton(c, playButton, "Jouer", button, buttonText)
+        drawButton(c, settingsButton, "Paramètres", buttonAlt, buttonAltText)
         drawFallingSnow(c)
     }
 
     private fun drawGame(c: Canvas) {
         drawScene(c)
         drawHud(c)
+
+        // Rappel en début de partie : toucher l'écran = pause / paramètres
+        if (gameTime < 3f) {
+            hintText.alpha = ((3f - gameTime).coerceIn(0f, 1f) * 255).toInt()
+            c.drawText("Touche l'écran : pause / paramètres", width / 2f, height - 100f * d, hintText)
+        }
     }
 
     private fun drawPauseScreen(c: Canvas) {
         drawScene(c)
         drawHud(c)
         c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlay)
-        drawCard(c, pauseCard)
-        val cx = width / 2f
-        val cy = height * 0.45f
-        c.drawText("Pause", cx, cy - 55f * d, titleText)
-        drawButton(c, resumeButton, "Reprendre", button, buttonText)
-        drawButton(c, pauseMenuButton, "Menu", buttonAlt, buttonAltText)
+        drawSettingsPanel(c, "Pause", pauseCard, inGame = true)
+    }
+
+    private fun drawSettingsScreen(c: Canvas) {
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bg)
+        drawFallingSnow(c)
+        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), overlay)
+        drawSettingsPanel(c, "Paramètres", settingsCard, inGame = false)
     }
 
     private fun drawGameOverScreen(c: Canvas) {
@@ -439,7 +497,72 @@ class GameView(context: Context) : View(context) {
         }
     }
 
-    // ======================= INTERFACE =======================
+    // ======================= PANNEAU PAUSE / PARAMÈTRES =======================
+    private fun drawSettingsPanel(c: Canvas, title: String, cardRect: RectF, inGame: Boolean) {
+        drawCard(c, cardRect)
+        val cx = width / 2f
+        c.drawText(title, cx, panelTop + 50f * d, titleText)
+
+        // Sensibilité du mouvement
+        c.drawText("Sensibilité mouvement", trackLeft, moveY - 22f * d, labelText)
+        c.drawText(percent(moveSens), trackRight, moveY - 22f * d, valueText)
+        drawSlider(c, moveY, (moveSens - moveMin) / (moveMax - moveMin))
+
+        // Sensibilité du micro + jauge de test en direct
+        c.drawText("Sensibilité micro", trackLeft, micY - 22f * d, labelText)
+        c.drawText(percent(micSens), trackRight, micY - 22f * d, valueText)
+        drawSlider(c, micY, (micSens - micMin) / (micMax - micMin))
+        if (micAvailable) {
+            drawLevelBar(c, trackLeft, trackRight, previewY, 4f * d)
+        } else {
+            c.drawText("Micro non autorisé", trackLeft, previewY + 5f * d, micOffText)
+        }
+
+        // Valeurs par défaut
+        val ty = defaultsButton.centerY() - (linkText.ascent() + linkText.descent()) / 2f
+        c.drawText("Valeurs par défaut", cx, ty, linkText)
+
+        if (inGame) {
+            drawButton(c, primaryButton, "Reprendre", button, buttonText)
+            drawButton(c, secondaryButton, "Menu", buttonAlt, buttonAltText)
+        } else {
+            drawButton(c, primaryButton, "Retour", button, buttonText)
+        }
+    }
+
+    private fun percent(v: Float) = "${(v * 100).roundToInt()} %"
+
+    /** Curseur : barre, partie remplie et poignée ronde. t entre 0 et 1. */
+    private fun drawSlider(c: Canvas, y: Float, t: Float) {
+        val tt = t.coerceIn(0f, 1f)
+        val h = 3f * d
+        tmpRect.set(trackLeft, y - h, trackRight, y + h)
+        c.drawRoundRect(tmpRect, h, h, gaugeTrack)
+        val tx = trackLeft + (trackRight - trackLeft) * tt
+        tmpRect.set(trackLeft, y - h, tx, y + h)
+        c.drawRoundRect(tmpRect, h, h, sliderFill)
+        c.drawCircle(tx, y + 2f * d, 12f * d, pillShadow)
+        c.drawCircle(tx, y, 12f * d, thumbFill)
+        c.drawCircle(tx, y, 12f * d, thumbEdge)
+    }
+
+    private fun hitSlider(sliderY: Float, x: Float, y: Float) =
+        abs(y - sliderY) < 24f * d && x > trackLeft - 24f * d && x < trackRight + 24f * d
+
+    private fun setSliderFromX(which: Int, x: Float) {
+        val t = ((x - trackLeft) / (trackRight - trackLeft)).coerceIn(0f, 1f)
+        if (which == 1) {
+            var v = moveMin + t * (moveMax - moveMin)
+            if (abs(v - 1f) < 0.05f) v = 1f        // se cale sur 100 % (réglage de base)
+            moveSens = v
+        } else {
+            var v = micMin + t * (micMax - micMin)
+            if (abs(v - 1f) < 0.05f) v = 1f
+            micSens = v
+        }
+    }
+
+    // ======================= INTERFACE EN JEU =======================
     private fun drawHud(c: Canvas) {
         // Score en haut à gauche
         val label = "${score()} m"
@@ -455,19 +578,10 @@ class GameView(context: Context) : View(context) {
         c.drawRoundRect(tmpRect, rad, rad, pill)
         c.drawText(label, left + 16f * d, 65f * d, scoreText)
 
-        // Bouton pause en haut à droite
-        val bx = pauseButton.centerX()
-        val by = pauseButton.centerY()
-        val pr = pauseButton.width() / 2f
-        c.drawCircle(bx, by + 3f * d, pr, pillShadow)
-        c.drawCircle(bx, by, pr, pill)
-        c.drawRect(bx - 7f * d, by - 9f * d, bx - 2.5f * d, by + 9f * d, hudIcon)
-        c.drawRect(bx + 2.5f * d, by - 9f * d, bx + 7f * d, by + 9f * d, hudIcon)
-
         drawMicGauge(c)
     }
 
-    /** Jauge du micro en bas de l'écran : volume réel, barre de seuil et vitesse actuelle. */
+    /** Jauge du micro en bas de l'écran : volume, barre de seuil et vitesse actuelle. */
     private fun drawMicGauge(c: Canvas) {
         val left = 16f * d
         val right = width - 16f * d
@@ -495,28 +609,24 @@ class GameView(context: Context) : View(context) {
 
         val barLeft = left + 44f * d
         val barRight = right - 76f * d
-
         if (!micAvailable) {
             c.drawText("Micro non autorisé", barLeft, my + 5f * d, micOffText)
             return
         }
+        drawLevelBar(c, barLeft, barRight, my, 6f * d)
+    }
 
-        // Barre : volume réel
-        val loud = micDisplay > micThreshold
-        val barTop = my - 6f * d
-        val barBottom = my + 6f * d
-        val barRad = 6f * d
-        tmpRect.set(barLeft, barTop, barRight, barBottom)
-        c.drawRoundRect(tmpRect, barRad, barRad, gaugeTrack)
+    /** Barre de niveau du micro avec repère du seuil (utilisée en jeu et dans les paramètres). */
+    private fun drawLevelBar(c: Canvas, l: Float, r: Float, cy: Float, halfH: Float) {
+        tmpRect.set(l, cy - halfH, r, cy + halfH)
+        c.drawRoundRect(tmpRect, halfH, halfH, gaugeTrack)
         val level = micDisplay.coerceIn(0f, 1f)
         if (level > 0.01f) {
-            tmpRect.set(barLeft, barTop, barLeft + (barRight - barLeft) * level, barBottom)
-            c.drawRoundRect(tmpRect, barRad, barRad, if (loud) gaugeLoud else gaugeCalm)
+            tmpRect.set(l, cy - halfH, l + (r - l) * level, cy + halfH)
+            c.drawRoundRect(tmpRect, halfH, halfH, if (micDisplay > micThreshold) gaugeLoud else gaugeCalm)
         }
-
-        // Repère du seuil
-        val sx = barLeft + (barRight - barLeft) * micThreshold
-        c.drawLine(sx, barTop - 5f * d, sx, barBottom + 5f * d, gaugeMark)
+        val sx = l + (r - l) * micThreshold
+        c.drawLine(sx, cy - halfH - 5f * d, sx, cy + halfH + 5f * d, gaugeMark)
     }
 
     private fun drawCard(c: Canvas, r: RectF) {
@@ -536,32 +646,60 @@ class GameView(context: Context) : View(context) {
 
     // ======================= INTERACTIONS =======================
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action != MotionEvent.ACTION_DOWN) return true
         val x = event.x
         val y = event.y
 
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> onTouchDown(x, y)
+            MotionEvent.ACTION_MOVE -> if (dragging != 0) setSliderFromX(dragging, x)
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (dragging != 0) {
+                    dragging = 0
+                    saveSettings()
+                }
+            }
+        }
+        invalidate()
+        return true
+    }
+
+    private fun onTouchDown(x: Float, y: Float) {
         when (gameState) {
             GameState.START -> {
                 if (playButton.contains(x, y)) {
                     performClick()
                     resetGame()
                     gameState = GameState.PLAYING
+                } else if (settingsButton.contains(x, y)) {
+                    performClick()
+                    gameState = GameState.SETTINGS
                 }
             }
             GameState.PLAYING -> {
-                if (pauseButton.contains(x, y)) {
-                    performClick()
-                    gameState = GameState.PAUSED
-                }
+                // Toucher l'écran n'importe où = pause / paramètres
+                performClick()
+                gameState = GameState.PAUSED
             }
-            GameState.PAUSED -> {
-                if (resumeButton.contains(x, y)) {
-                    performClick()
-                    gameState = GameState.PLAYING
-                } else if (pauseMenuButton.contains(x, y)) {
-                    performClick()
-                    resetGame()
-                    gameState = GameState.START
+            GameState.PAUSED, GameState.SETTINGS -> {
+                val inGame = gameState == GameState.PAUSED
+                when {
+                    hitSlider(moveY, x, y) -> { dragging = 1; setSliderFromX(1, x) }
+                    hitSlider(micY, x, y) -> { dragging = 2; setSliderFromX(2, x) }
+                    defaultsButton.contains(x, y) -> {
+                        performClick()
+                        moveSens = 1f
+                        micSens = 1f
+                        saveSettings()
+                    }
+                    primaryButton.contains(x, y) -> {
+                        performClick()
+                        gameState = if (inGame) GameState.PLAYING else GameState.START
+                    }
+                    inGame && secondaryButton.contains(x, y) -> {
+                        performClick()
+                        resetGame()
+                        gameState = GameState.START
+                    }
                 }
             }
             GameState.GAME_OVER -> {
@@ -579,8 +717,6 @@ class GameView(context: Context) : View(context) {
                 }
             }
         }
-        invalidate()
-        return true
     }
 
     override fun performClick(): Boolean {
