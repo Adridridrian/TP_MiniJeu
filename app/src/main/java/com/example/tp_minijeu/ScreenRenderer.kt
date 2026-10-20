@@ -10,6 +10,7 @@ internal fun GameView.drawCurrentScreen(canvas: Canvas) {
         GameState.PAUSED -> drawPauseScreen(canvas)
         GameState.SETTINGS -> drawSettingsScreen(canvas)
         GameState.GAME_OVER -> drawGameOverScreen(canvas)
+        GameState.LEADERBOARD -> drawLeaderboardScreen(canvas)
     }
 }
 
@@ -21,6 +22,7 @@ internal fun GameView.drawStartScreen(c: Canvas) {
     drawPlayer(c, cx, height * 0.42f, 0f)
     drawButton(c, playButton, "Jouer", paints.button, paints.buttonText)
     drawButton(c, settingsButton, "Paramètres", paints.buttonAlt, paints.buttonAltText)
+    drawButton(c, startLeaderboardButton, "Classement", paints.buttonAlt, paints.buttonAltText)
     drawFallingSnow(c)
 }
 
@@ -49,6 +51,13 @@ internal fun GameView.drawSettingsScreen(c: Canvas) {
     drawSettingsPanel(c, "Paramètres", settingsCard, inGame = false)
 }
 
+internal fun GameView.drawLeaderboardScreen(c: Canvas) {
+    // Fond clair sans voile sombre : le titre et les lignes restent lisibles
+    c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paints.bg)
+    drawLeaderboardPanel(c)
+    drawFallingSnow(c)          // dessinée en dernier : la neige passe devant tout le classement
+}
+
 internal fun GameView.drawGameOverScreen(c: Canvas) {
     drawScene(c)
     drawHud(c)
@@ -56,9 +65,18 @@ internal fun GameView.drawGameOverScreen(c: Canvas) {
     drawCard(c, overCard)
     val cx = width / 2f
     val cy = height * 0.45f
-    c.drawText("Perdu !", cx, cy - 55f * d, paints.titleText)
-    c.drawText("Distance : ${score()} m", cx, cy - 10f * d, paints.infoText)
-    c.drawText("Record : $best m", cx, cy + 22f * d, paints.infoText)
+    c.drawText("Perdu !", cx, cy - 64f * d, paints.titleText)
+    c.drawText("Distance : ${score()} m", cx, cy - 28f * d, paints.infoText)
+    c.drawText("Record : $best m", cx, cy - 2f * d, paints.infoText)
+
+    // Feedback sur le classement (lastRank : 0 = 1re place, null = hors du top 10)
+    val rank = lastRank
+    if (rank == 0) {
+        c.drawText("Nouveau record !", cx, cy + 28f * d, paints.recordText)
+    } else if (rank != null) {
+        c.drawText("${rank + 1}e place au classement", cx, cy + 28f * d, paints.rankText)
+    }
     drawButton(c, replayButton, "Rejouer", paints.button, paints.buttonText)
     drawButton(c, overMenuButton, "Menu", paints.buttonAlt, paints.buttonAltText)
+    drawButton(c, overLeaderboardButton, "Classement", paints.buttonAlt, paints.buttonAltText)
 }

@@ -113,7 +113,8 @@ internal fun GameView.updatePlaying(dt: Float) {
     if (hitsObstacle(baseY, s)) {
         gameState = GameState.GAME_OVER
         gameOverAt = System.currentTimeMillis()
-        best = maxOf(best, score())
+        lastRank = leaderboard.add(score())
+        best = leaderboard.entries.firstOrNull()?.first ?: 0
         velocity = 0f
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.PointF
 import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 
@@ -45,8 +46,12 @@ class GameView(context: Context) : View(context) {
     internal var moveSens = prefs.getFloat("moveSens", 1f)
     internal var micSens = prefs.getFloat("micSens", 1f)
 
+    // ---------- Classement (top 10 local, sauvegardé) ----------
+    internal val leaderboard = Leaderboard(prefs).apply { load() }
+
     // ---------- État du jeu ----------
     internal var gameState = GameState.START
+    internal var previousState = GameState.START
 
     internal var posX = -1f
     internal var baseY = 0f                // hauteur fixe du bonhomme (calculée dans onSizeChanged)
@@ -56,7 +61,7 @@ class GameView(context: Context) : View(context) {
     internal var scrollSpeed = baseScroll
     internal var gameTime = 0f
     internal var distance = 0f
-    internal var best = 0
+    internal var best = leaderboard.entries.firstOrNull()?.first ?: 0   // record = 1re ligne du classement
     internal var gameOverAt = 0L
     internal var spawnTimer = 1.5f
     internal var sprayAcc = 0f
@@ -69,20 +74,27 @@ class GameView(context: Context) : View(context) {
     internal val obstacles = mutableListOf<Obstacle>()
     internal val particles = mutableListOf<Particle>()
     internal val airFlakes = mutableListOf<Flake>()
+    internal val icicles = mutableListOf<Icicle>()     // glaçons du classement (tirés dans setupLayout)
     internal val trail = ArrayDeque<PointF>()
 
     // ---------- Zones des boutons et du panneau (calculées dans onSizeChanged) ----------
     internal val playButton = RectF()
     internal val settingsButton = RectF()
+    internal val startLeaderboardButton = RectF()
+    internal val overLeaderboardButton = RectF()
     internal val replayButton = RectF()
     internal val overMenuButton = RectF()
     internal val overCard = RectF()
+    internal val backButton = RectF()
 
     internal val pauseCard = RectF()       // panneau en jeu (2 boutons)
     internal val settingsCard = RectF()    // panneau depuis le menu (1 bouton)
     internal val primaryButton = RectF()   // "Reprendre" ou "Retour"
     internal val secondaryButton = RectF() // "Menu" (seulement en jeu)
     internal val defaultsButton = RectF()  // "Valeurs par défaut"
+
+    internal var listTop = 0f
+    internal var rowHeight = 0f
     internal var panelTop = 0f
     internal var trackLeft = 0f
     internal var trackRight = 0f
@@ -91,6 +103,8 @@ class GameView(context: Context) : View(context) {
     internal var previewY = 0f             // hauteur de la jauge de test du micro
 
     internal val tmpRect = RectF()         // réutilisé pour éviter d'allouer pendant le dessin
+
+    internal var lastRank: Int? = null
 
     // ---------- Pinceaux ----------
     internal val paints = GamePaints(d)
@@ -136,4 +150,5 @@ class GameView(context: Context) : View(context) {
         super.performClick()
         return true
     }
+
 }

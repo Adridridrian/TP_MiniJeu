@@ -31,6 +31,10 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
             } else if (settingsButton.contains(x, y)) {
                 performClick()
                 gameState = GameState.SETTINGS
+            } else if (startLeaderboardButton.contains(x, y)) {
+                performClick()
+                previousState = gameState      // on retient d'où l'on vient
+                gameState = GameState.LEADERBOARD
             }
         }
         GameState.PLAYING -> {
@@ -71,7 +75,17 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
                     performClick()
                     resetGame()
                     gameState = GameState.START
+                } else if (overLeaderboardButton.contains(x, y)) {
+                    performClick()
+                    previousState = gameState      // on retient d'où l'on vient
+                    gameState = GameState.LEADERBOARD
                 }
+            }
+        }
+        GameState.LEADERBOARD -> {
+            if (backButton.contains(x, y)) {
+                performClick()
+                gameState = previousState
             }
         }
     }
