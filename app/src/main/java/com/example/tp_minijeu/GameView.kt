@@ -43,7 +43,13 @@ class GameView(context: Context) : View(context) {
     // ---------- Paramètres modifiables par le joueur (sauvegardés) ----------
     internal val prefs = context.getSharedPreferences("reglages", Context.MODE_PRIVATE)
     internal var moveSens = prefs.getFloat("moveSens", 1f)
-    internal var micSens = prefs.getFloat("micSens", 1f)
+    internal var difficulty = prefs.getInt("difficulty", 1)   // 0 facile, 1 moyen, 2 difficile (choisi à l'accueil)
+    // Sensibilité du micro selon la difficulté : plus le micro est sensible, plus le jeu accélère facilement
+    internal val micSens get() = when (difficulty) {
+        0 -> micMin
+        2 -> micMax
+        else -> 1f
+    }
     internal var touchMode = prefs.getBoolean("touchMode", false)   // false = immersif (accéléromètre), true = tactile (barre)
 
     // ---------- État du jeu ----------
@@ -65,7 +71,7 @@ class GameView(context: Context) : View(context) {
     internal var speedMultiplier = 1f      // vitesse actuelle (ne redescend jamais pendant une partie)
     internal var speedCooldown = 0f
     internal var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
-    internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 micro
+    internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement
     internal var steering = false          // mode tactile : le doigt est sur la barre de contrôle
     internal var touchX = 0f               // mode tactile : position horizontale du doigt
 
@@ -77,6 +83,7 @@ class GameView(context: Context) : View(context) {
     // ---------- Zones des boutons et du panneau (calculées dans onSizeChanged) ----------
     internal val playButton = RectF()
     internal val settingsButton = RectF()
+    internal val difficultyButtons = Array(3) { RectF() }   // "Facile", "Moyen", "Difficile"
     internal val replayButton = RectF()
     internal val overMenuButton = RectF()
     internal val overCard = RectF()
@@ -93,7 +100,6 @@ class GameView(context: Context) : View(context) {
     internal var trackLeft = 0f
     internal var trackRight = 0f
     internal var moveY = 0f                // hauteur du curseur mouvement
-    internal var micY = 0f                 // hauteur du curseur micro
     internal var previewY = 0f             // hauteur de la jauge de test du micro
 
     internal val tmpRect = RectF()         // réutilisé pour éviter d'allouer pendant le dessin

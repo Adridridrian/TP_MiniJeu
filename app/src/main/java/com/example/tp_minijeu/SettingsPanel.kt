@@ -8,7 +8,7 @@ import kotlin.math.roundToInt
 internal fun GameView.saveSettings() {
     prefs.edit()
         .putFloat("moveSens", moveSens)
-        .putFloat("micSens", micSens)
+        .putInt("difficulty", difficulty)
         .putBoolean("touchMode", touchMode)
         .apply()
 }
@@ -34,10 +34,8 @@ internal fun GameView.drawSettingsPanel(c: Canvas, title: String, cardRect: Rect
     c.drawText(percent(moveSens), trackRight, moveY - 22f * d, paints.valueText)
     drawSlider(c, moveY, (moveSens - moveMin) / (moveMax - moveMin))
 
-    // Sensibilité du micro + jauge de test en direct
-    c.drawText("Sensibilité micro", trackLeft, micY - 22f * d, paints.labelText)
-    c.drawText(percent(micSens), trackRight, micY - 22f * d, paints.valueText)
-    drawSlider(c, micY, (micSens - micMin) / (micMax - micMin))
+    // Jauge de test du micro en direct (sa sensibilité dépend de la difficulté choisie à l'accueil)
+    c.drawText("Test du micro", trackLeft, previewY - 22f * d, paints.labelText)
     if (micAvailable) {
         drawLevelBar(c, trackLeft, trackRight, previewY, 4f * d)
     } else {
@@ -81,9 +79,5 @@ internal fun GameView.setSliderFromX(which: Int, x: Float) {
         var v = moveMin + t * (moveMax - moveMin)
         if (abs(v - 1f) < 0.05f) v = 1f        // se cale sur 100 % (réglage de base)
         moveSens = v
-    } else {
-        var v = micMin + t * (micMax - micMin)
-        if (abs(v - 1f) < 0.05f) v = 1f
-        micSens = v
     }
 }

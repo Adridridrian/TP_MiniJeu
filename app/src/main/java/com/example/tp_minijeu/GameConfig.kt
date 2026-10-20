@@ -23,4 +23,4 @@ internal val micRelease = 2.5f         // vitesse de descente de la jauge (plus 
 
 // ---------- Bornes des paramètres modifiables par le joueur ----------
 internal val moveMin = 0.25f; internal val moveMax = 2f     // sensibilité mouvement : 25 % .. 200 %
-internal val micMin = 0.5f;   internal val micMax = 2f      // sensibilité micro : 50 % .. 200 %
+internal val micMin = 0.5f;   internal val micMax = 2f      // sensibilité micro : 50 % (facile) .. 200 % (difficile)

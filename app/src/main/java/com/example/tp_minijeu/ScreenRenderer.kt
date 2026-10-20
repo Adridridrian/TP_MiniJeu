@@ -19,6 +19,14 @@ internal fun GameView.drawStartScreen(c: Canvas) {
     c.drawText("MINI-JEU", cx, height * 0.18f, paints.titleText)
     c.drawText("Record : $best m", cx, height * 0.18f + 36f * d, paints.infoText)
     drawPlayer(c, cx, height * 0.42f, 0f)
+
+    // Choix de la difficulté (sensibilité du micro)
+    val labels = arrayOf("Facile", "Moyen", "Difficile")
+    difficultyButtons.forEachIndexed { i, r ->
+        if (i == difficulty) drawButton(c, r, labels[i], paints.button, paints.segmentOnText)
+        else drawButton(c, r, labels[i], paints.buttonAlt, paints.segmentOffText)
+    }
+
     drawButton(c, playButton, "Jouer", paints.button, paints.buttonText)
     drawButton(c, settingsButton, "Paramètres", paints.buttonAlt, paints.buttonAltText)
     drawFallingSnow(c)

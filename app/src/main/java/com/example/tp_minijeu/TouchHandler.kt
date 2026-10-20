@@ -35,6 +35,13 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
             } else if (settingsButton.contains(x, y)) {
                 performClick()
                 gameState = GameState.SETTINGS
+            } else {
+                val i = difficultyButtons.indexOfFirst { it.contains(x, y) }
+                if (i >= 0) {
+                    performClick()
+                    difficulty = i
+                    saveSettings()
+                }
             }
         }
         GameState.PLAYING -> {
@@ -62,11 +69,9 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
                     saveSettings()
                 }
                 hitSlider(moveY, x, y) -> { dragging = 1; setSliderFromX(1, x) }
-                hitSlider(micY, x, y) -> { dragging = 2; setSliderFromX(2, x) }
                 defaultsButton.contains(x, y) -> {
                     performClick()
                     moveSens = 1f
-                    micSens = 1f
                     saveSettings()
                 }
                 primaryButton.contains(x, y) -> {
