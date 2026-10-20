@@ -68,7 +68,8 @@ internal fun GameView.update() {
 
 internal fun GameView.updatePlaying(dt: Float) {
     gameTime += dt
-    val difficulty = minOf(1f + gameTime / secondsToMax * (maxDifficulty - 1f), maxDifficulty)
+    // Accélération progressive avec le temps (à ne pas confondre avec la propriété difficulty = Facile/Moyen/Difficile)
+    val timeRamp = minOf(1f + gameTime / secondsToMax * (maxDifficulty - 1f), maxDifficulty)
 
     // Son au-dessus de la barre : la vitesse augmente (jusqu'à la prochaine vie perdue)
     if (speedCooldown > 0f) speedCooldown -= dt
@@ -77,7 +78,7 @@ internal fun GameView.updatePlaying(dt: Float) {
         speedCooldown = speedCooldownTime
         speedFlash = 0.6f
     }
-    scrollSpeed = baseScroll * difficulty * speedMultiplier
+    scrollSpeed = baseScroll * timeRamp * speedMultiplier
 
     if (touchMode) {
         // Mode tactile : le bonhomme rejoint le doigt posé sur la barre (vitesse limitée)
@@ -125,7 +126,7 @@ internal fun GameView.updatePlaying(dt: Float) {
     spawnTimer -= dt
     if (spawnTimer <= 0f) {
         spawnObstacle()
-        spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / (difficulty * speedMultiplier)
+        spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / (timeRamp * speedMultiplier)
     }
 
     // Collision : on perd une vie, puis on est invincible le temps de sortir de l'obstacle
@@ -136,9 +137,11 @@ internal fun GameView.updatePlaying(dt: Float) {
         lives--
         burstSnow()
         if (lives <= 0) {
+            // Plus de vie : fin de partie, le score entre (ou non) dans le classement
             gameState = GameState.GAME_OVER
             gameOverAt = System.currentTimeMillis()
-            best = maxOf(best, score())
+            lastRank = leaderboard.add(score())                      // 0 = 1re place, null = hors top 10
+            best = leaderboard.entries.firstOrNull()?.first ?: 0     // record = 1re ligne du classement
             velocity = 0f
         } else {
             invincible = invincibleTime
@@ -160,11 +163,6 @@ internal fun GameView.burstSnow() {
             cos(a) * v, sin(a) * v - 40f * d,
             0.5f
         ))
-    if (hitsObstacle(baseY, s)) {
-        gameState = GameState.GAME_OVER
-        gameOverAt = System.currentTimeMillis()
-        lastRank = leaderboard.add(score())
-        best = leaderboard.entries.firstOrNull()?.first ?: 0
-        velocity = 0f
     }
 }
+
