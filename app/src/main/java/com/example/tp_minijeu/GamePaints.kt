@@ -53,11 +53,14 @@ internal class GamePaints(private val d: Float) {
     val snowFlat = fill("#FFFFFF")
     val rock = Paint(Paint.ANTI_ALIAS_FLAG)
     val rockEdge = line("#4A525C", 1.2f * d)
+    val hitbox = line("#E53935", 1.5f * d)
 
     // Interface
     val pill = fill("#E6FFFFFF")
     val pillShadow = fill("#22000000")
     val hudIcon = fill("#1A3A5C")
+    val heartFull = fill("#E53935")
+    val heartEmpty = fill("#CFD8DC")
     val scoreText = text("#1A3A5C", 20f, Paint.Align.LEFT)
     val overlay = fill("#80102030")
     val card = fill("#FFFFFF")
@@ -84,6 +87,8 @@ internal class GamePaints(private val d: Float) {
     val sliderFill = fill("#1E88E5")
     val thumbFill = fill("#FFFFFF")
     val thumbEdge = line("#1E88E5", 3f * d)
+    val segmentOnText = text("#FFFFFF", 16f, Paint.Align.CENTER)
+    val segmentOffText = text("#1E88E5", 16f, Paint.Align.CENTER)
 
     // Jauge du micro
     val gaugeTrack = fill("#CFDCE8")

@@ -21,8 +21,10 @@ internal fun GameView.drawScene(c: Canvas) {
     }
 
     // Bonhomme (+ sa copie de l'autre côté quand il passe un bord)
-    val lean = (velocity / speedFactor * 2.5f).coerceIn(-20f, 20f)
-    for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
+    val lean = playerLean()
+    // Invincible après un choc : le bonhomme clignote (5 fois par seconde)
+    val hidden = invincible > 0f && (invincible * 10f).toInt() % 2 == 0
+    if (!hidden) for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
         val cx = posX + ox
         if (cx < -60f * d || cx > width + 60f * d) continue
         drawPlayer(c, cx, baseY, lean)
@@ -30,7 +32,24 @@ internal fun GameView.drawScene(c: Canvas) {
 
     for (o in obstacles) if (o.y > limit) drawObstacleWrapped(c, o)
 
+    if (showHitboxes) drawHitboxes(c, lean)
+
     drawFallingSnow(c)
+}
+
+/** Mode réglage : zones de collision du bonhomme et des obstacles en rouge. */
+internal fun GameView.drawHitboxes(c: Canvas, lean: Float) {
+    for (h in playerHitCircles(posX, baseY, lean)) c.drawCircle(h.x, h.y, h.r, paints.hitbox)
+    for (o in obstacles) {
+        for (shape in obstacleHitShapes(o, o.x)) {
+            val path = Path()
+            for (i in shape.xs.indices) {
+                if (i == 0) path.moveTo(shape.xs[i], shape.ys[i]) else path.lineTo(shape.xs[i], shape.ys[i])
+            }
+            path.close()
+            c.drawPath(path, paints.hitbox)
+        }
+    }
 }
 
 internal fun GameView.drawPlayer(c: Canvas, cx: Float, y: Float, lean: Float) {

@@ -6,9 +6,6 @@ import android.graphics.LinearGradient
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /** Dessine l'obstacle, et sa copie de l'autre côté de l'écran s'il dépasse d'un bord. */
 internal fun GameView.drawObstacleWrapped(c: Canvas, o: Obstacle) {
@@ -27,12 +24,7 @@ internal fun GameView.drawTree(c: Canvas, x: Float, y: Float, s: Float) {
     c.drawRoundRect(RectF(x - 0.18f * s, y - 0.55f * s, x + 0.18f * s, y), 0.05f * s, 0.05f * s, paints.trunk)
 
     // 3 étages : (bas, haut, demi-largeur)
-    val tiers = listOf(
-        Triple(y - 0.35f * s, y - 1.5f * s, s),
-        Triple(y - 0.95f * s, y - 1.95f * s, 0.8f * s),
-        Triple(y - 1.45f * s, y - 2.4f * s, 0.6f * s)
-    )
-    for ((b, t, w) in tiers) {
+    for ((b, t, w) in treeTiers(y, s)) {
         // Feuillage
         val leaf = Path().apply {
             moveTo(x - w, b); quadTo(x, b + 0.18f * s, x + w, b); lineTo(x, t); close()
@@ -62,12 +54,10 @@ internal fun GameView.drawRock(c: Canvas, o: Obstacle, x: Float) {
     c.drawOval(x - 0.8f * r, y + 0.1f * r, x + 1.3f * r, y + 0.55f * r, paints.shadow)
 
     // Forme irrégulière
+    val pts = rockPoints(o, x)
     val path = Path()
     for (i in 0 until 8) {
-        val a = i * PI / 4
-        val px = x + (cos(a) * r * o.shape[i]).toFloat()
-        val py = y - 0.2f * r + (sin(a) * r * 0.65f * o.shape[i]).toFloat()
-        if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+        if (i == 0) path.moveTo(pts.xs[i], pts.ys[i]) else path.lineTo(pts.xs[i], pts.ys[i])
     }
     path.close()
 

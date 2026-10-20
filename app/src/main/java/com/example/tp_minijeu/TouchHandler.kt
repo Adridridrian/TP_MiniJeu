@@ -9,8 +9,12 @@ internal fun GameView.handleTouch(event: MotionEvent): Boolean {
 
     when (event.actionMasked) {
         MotionEvent.ACTION_DOWN -> onTouchDown(x, y)
-        MotionEvent.ACTION_MOVE -> if (dragging != 0) setSliderFromX(dragging, x)
+        MotionEvent.ACTION_MOVE -> {
+            if (dragging != 0) setSliderFromX(dragging, x)
+            if (steering) touchX = x
+        }
         MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            steering = false
             if (dragging != 0) {
                 dragging = 0
                 saveSettings()
@@ -35,22 +39,45 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
                 performClick()
                 previousState = gameState      // on retient d'où l'on vient
                 gameState = GameState.LEADERBOARD
+            } else {
+                val i = difficultyButtons.indexOfFirst { it.contains(x, y) }
+                if (i >= 0) {
+                    performClick()
+                    difficulty = i
+                    saveSettings()
+                }
             }
         }
         GameState.PLAYING -> {
-            // Toucher l'écran n'importe où = pause / paramètres
-            performClick()
-            gameState = GameState.PAUSED
+            if (touchMode && hitControlBar(y)) {
+                // Mode tactile : le doigt sur la barre guide le bonhomme
+                steering = true
+                touchX = x
+            } else {
+                // Toucher l'écran n'importe où ailleurs = pause / paramètres
+                performClick()
+                gameState = GameState.PAUSED
+            }
         }
         GameState.PAUSED, GameState.SETTINGS -> {
             val inGame = gameState == GameState.PAUSED
             when {
+                modeTiltButton.contains(x, y) -> {
+                    performClick()
+                    touchMode = false
+                    saveSettings()
+                }
+                modeTouchButton.contains(x, y) -> {
+                    performClick()
+                    touchMode = true
+                    saveSettings()
+                }
                 hitSlider(moveY, x, y) -> { dragging = 1; setSliderFromX(1, x) }
-                hitSlider(micY, x, y) -> { dragging = 2; setSliderFromX(2, x) }
+                hitSlider(volumeY, x, y) -> { dragging = 2; setSliderFromX(2, x) }
                 defaultsButton.contains(x, y) -> {
                     performClick()
                     moveSens = 1f
-                    micSens = 1f
+                    musicVol = musicVolume
                     saveSettings()
                 }
                 primaryButton.contains(x, y) -> {

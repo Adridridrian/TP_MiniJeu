@@ -34,6 +34,14 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
     playButton.set(cx - bw, h * 0.62f, cx + bw, h * 0.62f + 56f * d)
     settingsButton.set(cx - bw, h * 0.62f + 72f * d, cx + bw, h * 0.62f + 128f * d)
     startLeaderboardButton.set(cx - bw, h * 0.62f + 144f * d, cx + bw, h * 0.62f + 200f * d)
+    // Difficulté : 3 boutons côte à côte au-dessus de "Jouer"
+    val dl = cx - hw + 24f * d
+    val gap = 6f * d
+    val segW = (2f * (hw - 24f * d) - 2f * gap) / 3f
+    difficultyButtons.forEachIndexed { i, r ->
+        val l = dl + i * (segW + gap)
+        r.set(l, h * 0.62f - 52f * d, l + segW, h * 0.62f - 16f * d)
+    }
 
     // Fin de partie
     val ow = minOf(140f * d, w / 2f - 20f * d)
@@ -63,15 +71,20 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
     }
 
     // Panneau Pause / Paramètres
-    panelTop = maxOf(40f * d, h / 2f - 205f * d)
+    panelTop = maxOf(40f * d, h / 2f - 266f * d)
     trackLeft = cx - hw + 24f * d
     trackRight = cx + hw - 24f * d
-    moveY = panelTop + 120f * d
-    micY = panelTop + 190f * d
-    previewY = panelTop + 218f * d
-    defaultsButton.set(cx - 90f * d, panelTop + 235f * d, cx + 90f * d, panelTop + 267f * d)
-    primaryButton.set(cx - bw, panelTop + 285f * d, cx + bw, panelTop + 329f * d)
-    secondaryButton.set(cx - bw, panelTop + 345f * d, cx + bw, panelTop + 389f * d)
-    pauseCard.set(cx - hw, panelTop, cx + hw, panelTop + 410f * d)
-    settingsCard.set(cx - hw, panelTop, cx + hw, panelTop + 350f * d)
+    modeTiltButton.set(trackLeft, panelTop + 104f * d, cx - 4f * d, panelTop + 140f * d)
+    modeTouchButton.set(cx + 4f * d, panelTop + 104f * d, trackRight, panelTop + 140f * d)
+    moveY = panelTop + 200f * d
+    volumeY = panelTop + 270f * d
+    previewY = panelTop + 338f * d
+    defaultsButton.set(cx - 90f * d, panelTop + 357f * d, cx + 90f * d, panelTop + 389f * d)
+    primaryButton.set(cx - bw, panelTop + 407f * d, cx + bw, panelTop + 451f * d)
+    secondaryButton.set(cx - bw, panelTop + 467f * d, cx + bw, panelTop + 511f * d)
+    pauseCard.set(cx - hw, panelTop, cx + hw, panelTop + 532f * d)
+    settingsCard.set(cx - hw, panelTop, cx + hw, panelTop + 472f * d)
+
+    // Barre de contrôle tactile, juste au-dessus de la jauge du micro
+    controlY = h - 120f * d
 }

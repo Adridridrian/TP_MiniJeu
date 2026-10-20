@@ -6,7 +6,12 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 internal fun GameView.saveSettings() {
-    prefs.edit().putFloat("moveSens", moveSens).putFloat("micSens", micSens).apply()
+    prefs.edit()
+        .putFloat("moveSens", moveSens)
+        .putInt("difficulty", difficulty)
+        .putBoolean("touchMode", touchMode)
+        .putFloat("musicVolume", musicVol)
+        .apply()
 }
 
 // ======================= PANNEAU PAUSE / PARAMÈTRES =======================
@@ -15,15 +20,28 @@ internal fun GameView.drawSettingsPanel(c: Canvas, title: String, cardRect: Rect
     val cx = width / 2f
     c.drawText(title, cx, panelTop + 50f * d, paints.titleText)
 
+    // Mode de jeu : immersif (inclinaison) ou tactile (barre)
+    c.drawText("Mode de jeu", trackLeft, panelTop + 92f * d, paints.labelText)
+    if (touchMode) {
+        drawButton(c, modeTiltButton, "Immersif", paints.buttonAlt, paints.segmentOffText)
+        drawButton(c, modeTouchButton, "Tactile", paints.button, paints.segmentOnText)
+    } else {
+        drawButton(c, modeTiltButton, "Immersif", paints.button, paints.segmentOnText)
+        drawButton(c, modeTouchButton, "Tactile", paints.buttonAlt, paints.segmentOffText)
+    }
+
     // Sensibilité du mouvement
     c.drawText("Sensibilité mouvement", trackLeft, moveY - 22f * d, paints.labelText)
     c.drawText(percent(moveSens), trackRight, moveY - 22f * d, paints.valueText)
     drawSlider(c, moveY, (moveSens - moveMin) / (moveMax - moveMin))
 
-    // Sensibilité du micro + jauge de test en direct
-    c.drawText("Sensibilité micro", trackLeft, micY - 22f * d, paints.labelText)
-    c.drawText(percent(micSens), trackRight, micY - 22f * d, paints.valueText)
-    drawSlider(c, micY, (micSens - micMin) / (micMax - micMin))
+    // Volume de la musique
+    c.drawText("Volume musique", trackLeft, volumeY - 22f * d, paints.labelText)
+    c.drawText(if (musicVol <= 0f) "Coupé" else percent(musicVol), trackRight, volumeY - 22f * d, paints.valueText)
+    drawSlider(c, volumeY, musicVol)
+
+    // Jauge de test du micro en direct (sa sensibilité dépend de la difficulté choisie à l'accueil)
+    c.drawText("Test du micro", trackLeft, previewY - 22f * d, paints.labelText)
     if (micAvailable) {
         drawLevelBar(c, trackLeft, trackRight, previewY, 4f * d)
     } else {
@@ -68,8 +86,7 @@ internal fun GameView.setSliderFromX(which: Int, x: Float) {
         if (abs(v - 1f) < 0.05f) v = 1f        // se cale sur 100 % (réglage de base)
         moveSens = v
     } else {
-        var v = micMin + t * (micMax - micMin)
-        if (abs(v - 1f) < 0.05f) v = 1f
-        micSens = v
+        // Volume : de 0 (coupé) à 100 %, par pas de 5 %
+        musicVol = (t * 20f).roundToInt() / 20f
     }
 }

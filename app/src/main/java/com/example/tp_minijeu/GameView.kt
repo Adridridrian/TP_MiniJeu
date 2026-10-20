@@ -44,7 +44,15 @@ class GameView(context: Context) : View(context) {
     // ---------- Paramètres modifiables par le joueur (sauvegardés) ----------
     internal val prefs = context.getSharedPreferences("reglages", Context.MODE_PRIVATE)
     internal var moveSens = prefs.getFloat("moveSens", 1f)
-    internal var micSens = prefs.getFloat("micSens", 1f)
+    internal var difficulty = prefs.getInt("difficulty", 1)   // 0 facile, 1 moyen, 2 difficile (choisi à l'accueil)
+    // Sensibilité du micro selon la difficulté : plus le micro est sensible, plus le jeu accélère facilement
+    internal val micSens get() = when (difficulty) {
+        0 -> micMin
+        2 -> micMax
+        else -> 1f
+    }
+    internal var musicVol = prefs.getFloat("musicVolume", musicVolume)   // volume de la musique (0..1)
+    internal var touchMode = prefs.getBoolean("touchMode", false)   // false = immersif (accéléromètre), true = tactile (barre)
 
     // ---------- Classement (top 10 local, sauvegardé) ----------
     internal val leaderboard = Leaderboard(prefs).apply { load() }
@@ -66,10 +74,14 @@ class GameView(context: Context) : View(context) {
     internal var spawnTimer = 1.5f
     internal var sprayAcc = 0f
     internal var micDisplay = 0f           // niveau du micro après sensibilité (affiché par la jauge)
-    internal var speedMultiplier = 1f      // vitesse actuelle (ne redescend jamais pendant une partie)
+    internal var speedMultiplier = 1f      // vitesse actuelle (ne redescend qu'en perdant une vie)
     internal var speedCooldown = 0f
     internal var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
-    internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 micro
+    internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 volume
+    internal var lives = maxLives          // vies restantes
+    internal var invincible = 0f           // > 0 : invincible après un choc (secondes restantes)
+    internal var steering = false         // mode tactile : le doigt est sur la barre de contrôle
+    internal var touchX = 0f               // mode tactile : position horizontale du doigt
 
     internal val obstacles = mutableListOf<Obstacle>()
     internal val particles = mutableListOf<Particle>()
@@ -82,6 +94,7 @@ class GameView(context: Context) : View(context) {
     internal val settingsButton = RectF()
     internal val startLeaderboardButton = RectF()
     internal val overLeaderboardButton = RectF()
+    internal val difficultyButtons = Array(3) { RectF() }   // "Facile", "Moyen", "Difficile"
     internal val replayButton = RectF()
     internal val overMenuButton = RectF()
     internal val overCard = RectF()
@@ -92,6 +105,9 @@ class GameView(context: Context) : View(context) {
     internal val primaryButton = RectF()   // "Reprendre" ou "Retour"
     internal val secondaryButton = RectF() // "Menu" (seulement en jeu)
     internal val defaultsButton = RectF()  // "Valeurs par défaut"
+    internal val modeTiltButton = RectF()  // choix du mode "Immersif"
+    internal val modeTouchButton = RectF() // choix du mode "Tactile"
+    internal var controlY = 0f             // hauteur de la barre de contrôle tactile
 
     internal var listTop = 0f
     internal var rowHeight = 0f
@@ -99,7 +115,7 @@ class GameView(context: Context) : View(context) {
     internal var trackLeft = 0f
     internal var trackRight = 0f
     internal var moveY = 0f                // hauteur du curseur mouvement
-    internal var micY = 0f                 // hauteur du curseur micro
+    internal var volumeY = 0f              // hauteur du curseur volume
     internal var previewY = 0f             // hauteur de la jauge de test du micro
 
     internal val tmpRect = RectF()         // réutilisé pour éviter d'allouer pendant le dessin
@@ -108,6 +124,9 @@ class GameView(context: Context) : View(context) {
 
     // ---------- Pinceaux ----------
     internal val paints = GamePaints(d)
+
+    // ---------- Musique (mélodie en continu, batterie et BPM selon la vitesse pendant la partie) ----------
+    internal val music = ChristmasMusic()
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
@@ -127,13 +146,16 @@ class GameView(context: Context) : View(context) {
         lastTime = 0L                // évite un saut de dt au retour d'arrière-plan
         removeCallbacks(gameLoop)
         post(gameLoop)
+        music.start()
     }
 
     fun stopGame() {
         removeCallbacks(gameLoop)
+        music.stop()                 // libère la sortie audio en arrière-plan
         // L'appli passe en arrière-plan (appel, notification...) : on ne fait pas perdre la partie
         if (gameState == GameState.PLAYING) gameState = GameState.PAUSED
         dragging = 0
+        steering = false
         invalidate()
     }
 

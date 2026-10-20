@@ -91,6 +91,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (minBuf <= 0) { gameView.micAvailable = false; return }
 
         val recorder = try {
+            // MIC sans annulation d'écho : le micro entend aussi la musique du jeu,
+            // qui peut donc le faire accélérer (difficulté en plus, voulue)
             AudioRecord(
                 MediaRecorder.AudioSource.MIC, sampleRate,
                 AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBuf * 2

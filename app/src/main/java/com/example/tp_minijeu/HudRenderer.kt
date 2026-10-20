@@ -1,6 +1,9 @@
 package com.example.tp_minijeu
 
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import kotlin.math.abs
 
 // ======================= INTERFACE EN JEU =======================
 internal fun GameView.drawHud(c: Canvas) {
@@ -18,8 +21,67 @@ internal fun GameView.drawHud(c: Canvas) {
     c.drawRoundRect(tmpRect, rad, rad, paints.pill)
     c.drawText(label, left + 16f * d, 65f * d, paints.scoreText)
 
+    drawLives(c, top, bottom, rad)
+    if (touchMode) drawControlBar(c)
     drawMicGauge(c)
 }
+
+/** Vies restantes en haut à droite : cœurs rouges, et gris pour les vies perdues. */
+internal fun GameView.drawLives(c: Canvas, top: Float, bottom: Float, rad: Float) {
+    val size = 18f * d                    // largeur d'un cœur
+    val gap = 6f * d
+    val right = width - 16f * d
+    val left = right - maxLives * size - (maxLives - 1) * gap - 28f * d
+    tmpRect.set(left, top + 3f * d, right, bottom + 3f * d)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pillShadow)
+    tmpRect.set(left, top, right, bottom)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pill)
+
+    val cy = (top + bottom) / 2f
+    for (i in 0 until maxLives) {
+        val cx = left + 14f * d + size / 2f + i * (size + gap)
+        drawHeart(c, cx, cy, size, if (i < lives) paints.heartFull else paints.heartEmpty)
+    }
+}
+
+/** Cœur centré en (cx, cy), de largeur size. */
+internal fun drawHeart(c: Canvas, cx: Float, cy: Float, size: Float, paint: Paint) {
+    val w = size / 2f
+    val top = cy - size * 0.35f
+    val path = Path().apply {
+        moveTo(cx, cy + size * 0.45f)                                     // pointe du bas
+        cubicTo(cx - w * 1.6f, cy - size * 0.05f, cx - w * 0.9f, top - size * 0.45f, cx, top)
+        cubicTo(cx + w * 0.9f, top - size * 0.45f, cx + w * 1.6f, cy - size * 0.05f, cx, cy + size * 0.45f)
+        close()
+    }
+    c.drawPath(path, paint)
+}
+
+/** Mode tactile : barre en bas de l'écran avec une poignée qui suit le bonhomme. */
+internal fun GameView.drawControlBar(c: Canvas) {
+    val left = 16f * d
+    val right = width - 16f * d
+    val rad = 22f * d
+    tmpRect.set(left, controlY - rad + 3f * d, right, controlY + rad + 3f * d)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pillShadow)
+    tmpRect.set(left, controlY - rad, right, controlY + rad)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pill)
+
+    // Rail
+    val h = 3f * d
+    tmpRect.set(left + rad, controlY - h, right - rad, controlY + h)
+    c.drawRoundRect(tmpRect, h, h, paints.gaugeTrack)
+
+    // Poignée à la position du bonhomme
+    val kx = posX.coerceIn(left + rad, right - rad)
+    val kr = if (steering) 18f * d else 16f * d
+    c.drawCircle(kx, controlY + 2f * d, kr, paints.pillShadow)
+    c.drawCircle(kx, controlY, kr, paints.thumbFill)
+    c.drawCircle(kx, controlY, kr, paints.thumbEdge)
+}
+
+/** Mode tactile : le doigt touche-t-il la barre de contrôle ? */
+internal fun GameView.hitControlBar(y: Float) = abs(y - controlY) < 36f * d
 
 /** Jauge du micro en bas de l'écran : volume, barre de seuil et vitesse actuelle. */
 internal fun GameView.drawMicGauge(c: Canvas) {

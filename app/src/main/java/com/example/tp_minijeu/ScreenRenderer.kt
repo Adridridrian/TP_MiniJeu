@@ -20,6 +20,14 @@ internal fun GameView.drawStartScreen(c: Canvas) {
     c.drawText("MINI-JEU", cx, height * 0.18f, paints.titleText)
     c.drawText("Record : $best m", cx, height * 0.18f + 36f * d, paints.infoText)
     drawPlayer(c, cx, height * 0.42f, 0f)
+
+    // Choix de la difficulté (sensibilité du micro)
+    val labels = arrayOf("Facile", "Moyen", "Difficile")
+    difficultyButtons.forEachIndexed { i, r ->
+        if (i == difficulty) drawButton(c, r, labels[i], paints.button, paints.segmentOnText)
+        else drawButton(c, r, labels[i], paints.buttonAlt, paints.segmentOffText)
+    }
+
     drawButton(c, playButton, "Jouer", paints.button, paints.buttonText)
     drawButton(c, settingsButton, "Paramètres", paints.buttonAlt, paints.buttonAltText)
     drawButton(c, startLeaderboardButton, "Classement", paints.buttonAlt, paints.buttonAltText)
@@ -33,7 +41,12 @@ internal fun GameView.drawGame(c: Canvas) {
     // Rappel en début de partie : toucher l'écran = pause / paramètres
     if (gameTime < 3f) {
         paints.hintText.alpha = ((3f - gameTime).coerceIn(0f, 1f) * 255).toInt()
-        c.drawText("Touche l'écran : pause / paramètres", width / 2f, height - 100f * d, paints.hintText)
+        if (touchMode) {
+            c.drawText("Glisse la barre pour bouger", width / 2f, controlY - 64f * d, paints.hintText)
+            c.drawText("Touche ailleurs : pause / paramètres", width / 2f, controlY - 42f * d, paints.hintText)
+        } else {
+            c.drawText("Touche l'écran : pause / paramètres", width / 2f, height - 100f * d, paints.hintText)
+        }
     }
 }
 
