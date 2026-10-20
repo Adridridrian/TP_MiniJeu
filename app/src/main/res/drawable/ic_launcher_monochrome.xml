@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Version une couleur de l'icône (icônes à thème d'Android) : silhouette de la tête et du chapeau,
+     avec les yeux, le sourire et le nez découpés -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Agrandi de 12 % autour du centre : reste dans la zone visible des masques -->
+    <group android:pivotX="54" android:pivotY="54" android:scaleX="1.12" android:scaleY="1.12">
+
+    <!-- Tête percée des yeux, du sourire et du nez -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M34,62 a20,20 0 1,0 40,0 a20,20 0 1,0 -40,0z
+            M44,56 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0z
+            M58,56 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0z
+            M44.6,71.4 a1.4,1.4 0 1,0 2.8,0 a1.4,1.4 0 1,0 -2.8,0z
+            M48.7,73.2 a1.4,1.4 0 1,0 2.8,0 a1.4,1.4 0 1,0 -2.8,0z
+            M52.6,73.8 a1.4,1.4 0 1,0 2.8,0 a1.4,1.4 0 1,0 -2.8,0z
+            M56.5,73.2 a1.4,1.4 0 1,0 2.8,0 a1.4,1.4 0 1,0 -2.8,0z
+            M60.6,71.4 a1.4,1.4 0 1,0 2.8,0 a1.4,1.4 0 1,0 -2.8,0z
+            M54,61 L54,68 L71,65z" />
+
+    <!-- Chapeau (le ruban est découpé) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M43,28 Q43,26 45,26 L63,26 Q65,26 65,28 L65,43 L43,43z
+            M43,36 L65,36 L65,38.5 L43,38.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M33,42.5 Q31,42.5 31,44 Q31,45.5 33,45.5 L75,45.5 Q77,45.5 77,44 Q77,42.5 75,42.5z" />
+    </group>
+</vector>
