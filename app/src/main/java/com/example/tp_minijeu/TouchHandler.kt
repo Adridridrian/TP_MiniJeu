@@ -69,9 +69,11 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
                     saveSettings()
                 }
                 hitSlider(moveY, x, y) -> { dragging = 1; setSliderFromX(1, x) }
+                hitSlider(volumeY, x, y) -> { dragging = 2; setSliderFromX(2, x) }
                 defaultsButton.contains(x, y) -> {
                     performClick()
                     moveSens = 1f
+                    musicVol = musicVolume
                     saveSettings()
                 }
                 primaryButton.contains(x, y) -> {

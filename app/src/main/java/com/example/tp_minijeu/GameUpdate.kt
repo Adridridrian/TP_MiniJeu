@@ -38,6 +38,12 @@ internal fun GameView.update() {
     val k = if (micTarget > micDisplay) micAttack else micRelease
     micDisplay += (micTarget - micDisplay) * minOf(1f, dt * k)
 
+    // Musique : la mélodie tourne partout, la batterie et l'accélération seulement pendant la partie
+    val playing = gameState == GameState.PLAYING
+    music.drums = playing
+    music.speed = if (playing) speedMultiplier else 1f
+    music.volume = musicVol
+
     if (gameState == GameState.PAUSED) return   // tout est figé (la jauge de test reste active)
     clock += dt
     if (speedFlash > 0f) speedFlash -= dt
@@ -119,7 +125,9 @@ internal fun GameView.updatePlaying(dt: Float) {
         spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / (difficulty * speedMultiplier)
     }
 
-    if (hitsObstacle(baseY, s)) {
+    val hit = hitsObstacle(baseY, s)
+    if (hit != null) {
+        music.playCrash(hit.isTree)
         gameState = GameState.GAME_OVER
         gameOverAt = System.currentTimeMillis()
         best = maxOf(best, score())

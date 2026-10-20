@@ -9,6 +9,7 @@ import android.hardware.SensorManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -91,8 +92,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         if (minBuf <= 0) { gameView.micAvailable = false; return }
 
         val recorder = try {
+            // VOICE_COMMUNICATION : source avec annulation d'écho, pour que le micro
+            // n'entende pas la musique du jeu (sinon elle ferait accélérer le jeu toute seule)
             AudioRecord(
-                MediaRecorder.AudioSource.MIC, sampleRate,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION, sampleRate,
                 AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBuf * 2
             )
         } catch (e: SecurityException) {
@@ -104,6 +107,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             gameView.micAvailable = false
             return
         }
+
+        // Annulation d'écho explicite en plus, si le téléphone la propose
+        val echoCanceler = if (AcousticEchoCanceler.isAvailable())
+            AcousticEchoCanceler.create(recorder.audioSessionId)?.apply { enabled = true }
+        else null
 
         gameView.micAvailable = true
         micRunning = true
@@ -130,6 +138,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 gameView.micAvailable = false
             } finally {
                 try { recorder.stop() } catch (_: Exception) {}
+                echoCanceler?.release()
                 recorder.release()
             }
         }.apply { start() }

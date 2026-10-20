@@ -13,7 +13,8 @@ internal fun GameView.spawnObstacle() {
     obstacles.add(Obstacle(x, height + 3f * size, isTree, size))
 }
 
-internal fun GameView.hitsObstacle(baseY: Float, s: Float): Boolean {
+/** L'obstacle touché par le bonhomme, ou null s'il n'en touche aucun. */
+internal fun GameView.hitsObstacle(baseY: Float, s: Float): Obstacle? {
     val lean = playerLean()
     val margin = hitboxGrace * d
     // On teste aussi les copies du bonhomme à gauche/droite : couvre les obstacles à cheval sur un bord
@@ -27,9 +28,9 @@ internal fun GameView.hitsObstacle(baseY: Float, s: Float): Boolean {
 
             if (body == null) body = playerHitCircles(px, baseY, lean)
             for (shape in obstacleHitShapes(o, o.x)) {
-                for (circle in body) if (circle.hits(shape, margin)) return true
+                for (circle in body) if (circle.hits(shape, margin)) return o
             }
         }
     }
-    return false
+    return null
 }

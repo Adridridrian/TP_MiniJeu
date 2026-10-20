@@ -10,6 +10,7 @@ internal fun GameView.saveSettings() {
         .putFloat("moveSens", moveSens)
         .putInt("difficulty", difficulty)
         .putBoolean("touchMode", touchMode)
+        .putFloat("musicVolume", musicVol)
         .apply()
 }
 
@@ -33,6 +34,11 @@ internal fun GameView.drawSettingsPanel(c: Canvas, title: String, cardRect: Rect
     c.drawText("Sensibilité mouvement", trackLeft, moveY - 22f * d, paints.labelText)
     c.drawText(percent(moveSens), trackRight, moveY - 22f * d, paints.valueText)
     drawSlider(c, moveY, (moveSens - moveMin) / (moveMax - moveMin))
+
+    // Volume de la musique
+    c.drawText("Volume musique", trackLeft, volumeY - 22f * d, paints.labelText)
+    c.drawText(if (musicVol <= 0f) "Coupé" else percent(musicVol), trackRight, volumeY - 22f * d, paints.valueText)
+    drawSlider(c, volumeY, musicVol)
 
     // Jauge de test du micro en direct (sa sensibilité dépend de la difficulté choisie à l'accueil)
     c.drawText("Test du micro", trackLeft, previewY - 22f * d, paints.labelText)
@@ -79,5 +85,8 @@ internal fun GameView.setSliderFromX(which: Int, x: Float) {
         var v = moveMin + t * (moveMax - moveMin)
         if (abs(v - 1f) < 0.05f) v = 1f        // se cale sur 100 % (réglage de base)
         moveSens = v
+    } else {
+        // Volume : de 0 (coupé) à 100 %, par pas de 5 %
+        musicVol = (t * 20f).roundToInt() / 20f
     }
 }

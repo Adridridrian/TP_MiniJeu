@@ -25,6 +25,13 @@ internal val maxSpeed = 3f             // vitesse maximum (x3)
 internal val micAttack = 8f            // vitesse de montée de la jauge (plus haut = plus réactif)
 internal val micRelease = 2.5f         // vitesse de descente de la jauge (plus bas = plus doux)
 
+// ---------- Musique ----------
+internal val musicVolume = 0.7f        // volume par défaut de la musique (0..1), réglable dans les paramètres
+internal val sfxVolume = 0.9f          // volume des bruitages (impacts), indépendant de la musique
+internal val musicBaseBpm = 174f       // tempo à x1 (tempo classique de la drum & bass)
+internal val musicTempoFollow = 0.5f   // part du multiplicateur reprise par le BPM : x2 -> 261 BPM, x3 -> 348 BPM
+                                       // (1f = BPM proportionnel à la vitesse)
+
 // ---------- Bornes des paramètres modifiables par le joueur ----------
 internal val moveMin = 0.25f; internal val moveMax = 2f     // sensibilité mouvement : 25 % .. 200 %
 internal val micMin = 0.5f;   internal val micMax = 2f      // sensibilité micro : 50 % (facile) .. 200 % (difficile)
