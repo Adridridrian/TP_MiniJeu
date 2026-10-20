@@ -53,6 +53,7 @@ internal class GamePaints(private val d: Float) {
     val snowFlat = fill("#FFFFFF")
     val rock = Paint(Paint.ANTI_ALIAS_FLAG)
     val rockEdge = line("#4A525C", 1.2f * d)
+    val hitbox = line("#E53935", 1.5f * d)
 
     // Interface
     val pill = fill("#E6FFFFFF")

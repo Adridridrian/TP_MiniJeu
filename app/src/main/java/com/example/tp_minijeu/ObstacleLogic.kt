@@ -1,6 +1,6 @@
 package com.example.tp_minijeu
 
-import kotlin.math.hypot
+import kotlin.math.abs
 import kotlin.random.Random
 
 // ======================= OBSTACLES =======================
@@ -14,19 +14,20 @@ internal fun GameView.spawnObstacle() {
 }
 
 internal fun GameView.hitsObstacle(baseY: Float, s: Float): Boolean {
+    val lean = playerLean()
+    val margin = hitboxGrace * d
     // On teste aussi les copies du bonhomme à gauche/droite : couvre les obstacles à cheval sur un bord
     for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
         val px = posX + ox
-        val body = listOf(
-            Triple(px, baseY, 30f * s),
-            Triple(px, baseY - 42f * s, 22f * s),
-            Triple(px, baseY + 35f * s, 14f * s)
-        )
+        var body: List<HitCircle>? = null      // calculé seulement si un obstacle est proche
         for (o in obstacles) {
-            val (cx, cy, r) = if (o.isTree) Triple(o.x, o.y - 1.1f * o.size, 0.75f * o.size)
-            else Triple(o.x, o.y - 0.15f * o.size, 0.85f * o.size)
-            for ((bx, by, br) in body) {
-                if (hypot(cx - bx, cy - by) < r + br - 2f * d) return true
+            // Tri rapide : obstacle trop loin du bonhomme (en hauteur ou en largeur)
+            if (o.y - 2.5f * o.size > baseY + 90f * s || o.y + o.size < baseY - 160f * s) continue
+            if (abs(o.x - px) > 1.5f * o.size + 70f * s) continue
+
+            if (body == null) body = playerHitCircles(px, baseY, lean)
+            for (shape in obstacleHitShapes(o, o.x)) {
+                for (circle in body) if (circle.hits(shape, margin)) return true
             }
         }
     }

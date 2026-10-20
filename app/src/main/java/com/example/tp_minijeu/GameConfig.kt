@@ -8,6 +8,10 @@ internal val deadZone = 0.6f           // inclinaison ignorée (m/s²) : le tél
 internal val maxDifficulty = 1f        // 1f = vitesse constante
 internal val secondsToMax = 45f
 
+// ---------- Collisions ----------
+internal val hitboxGrace = 1f          // tolérance (dp) : il faut toucher l'obstacle d'au moins 1dp pour perdre
+internal val showHitboxes = false      // true = dessine les zones de collision en rouge (pour régler)
+
 // ---------- Réglages du mode tactile ----------
 internal val touchFollow = 8f          // vitesse à laquelle le bonhomme rejoint le doigt (plus haut = plus nerveux)
 internal val touchMaxTilt = 9f         // vitesse max, équivalente à une inclinaison de 9 m/s² en mode immersif
