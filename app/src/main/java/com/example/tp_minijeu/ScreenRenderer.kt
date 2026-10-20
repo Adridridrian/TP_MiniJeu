@@ -31,7 +31,12 @@ internal fun GameView.drawGame(c: Canvas) {
     // Rappel en début de partie : toucher l'écran = pause / paramètres
     if (gameTime < 3f) {
         paints.hintText.alpha = ((3f - gameTime).coerceIn(0f, 1f) * 255).toInt()
-        c.drawText("Touche l'écran : pause / paramètres", width / 2f, height - 100f * d, paints.hintText)
+        if (touchMode) {
+            c.drawText("Glisse la barre pour bouger", width / 2f, controlY - 64f * d, paints.hintText)
+            c.drawText("Touche ailleurs : pause / paramètres", width / 2f, controlY - 42f * d, paints.hintText)
+        } else {
+            c.drawText("Touche l'écran : pause / paramètres", width / 2f, height - 100f * d, paints.hintText)
+        }
     }
 }
 

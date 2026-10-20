@@ -6,7 +6,11 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 internal fun GameView.saveSettings() {
-    prefs.edit().putFloat("moveSens", moveSens).putFloat("micSens", micSens).apply()
+    prefs.edit()
+        .putFloat("moveSens", moveSens)
+        .putFloat("micSens", micSens)
+        .putBoolean("touchMode", touchMode)
+        .apply()
 }
 
 // ======================= PANNEAU PAUSE / PARAMÈTRES =======================
@@ -14,6 +18,16 @@ internal fun GameView.drawSettingsPanel(c: Canvas, title: String, cardRect: Rect
     drawCard(c, cardRect)
     val cx = width / 2f
     c.drawText(title, cx, panelTop + 50f * d, paints.titleText)
+
+    // Mode de jeu : immersif (inclinaison) ou tactile (barre)
+    c.drawText("Mode de jeu", trackLeft, panelTop + 92f * d, paints.labelText)
+    if (touchMode) {
+        drawButton(c, modeTiltButton, "Immersif", paints.buttonAlt, paints.segmentOffText)
+        drawButton(c, modeTouchButton, "Tactile", paints.button, paints.segmentOnText)
+    } else {
+        drawButton(c, modeTiltButton, "Immersif", paints.button, paints.segmentOnText)
+        drawButton(c, modeTouchButton, "Tactile", paints.buttonAlt, paints.segmentOffText)
+    }
 
     // Sensibilité du mouvement
     c.drawText("Sensibilité mouvement", trackLeft, moveY - 22f * d, paints.labelText)

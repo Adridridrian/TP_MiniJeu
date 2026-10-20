@@ -8,6 +8,10 @@ internal val deadZone = 0.6f           // inclinaison ignorée (m/s²) : le tél
 internal val maxDifficulty = 1f        // 1f = vitesse constante
 internal val secondsToMax = 45f
 
+// ---------- Réglages du mode tactile ----------
+internal val touchFollow = 8f          // vitesse à laquelle le bonhomme rejoint le doigt (plus haut = plus nerveux)
+internal val touchMaxTilt = 9f         // vitesse max, équivalente à une inclinaison de 9 m/s² en mode immersif
+
 // ---------- Réglages du micro ----------
 internal val micThreshold = 0.7f       // position de la barre (0..1) : au-dessus, la vitesse augmente
 internal val speedStep = 0.1f          // +10 % de vitesse à chaque dépassement

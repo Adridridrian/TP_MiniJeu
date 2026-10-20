@@ -21,6 +21,7 @@ internal fun GameView.resetGame() {
     speedCooldown = 0f
     speedFlash = 0f
     velocity = 0f
+    steering = false
     posX = width / 2f
 }
 
@@ -69,11 +70,19 @@ internal fun GameView.updatePlaying(dt: Float) {
     }
     scrollSpeed = baseScroll * difficulty * speedMultiplier
 
-    // Zone morte : petites inclinaisons ignorées, puis la vitesse repart de 0 au-delà du seuil
-    val effectiveTilt = if (abs(tilt) < deadZone) 0f else tilt - sign(tilt) * deadZone
+    if (touchMode) {
+        // Mode tactile : le bonhomme rejoint le doigt posé sur la barre (vitesse limitée)
+        val maxV = touchMaxTilt * speedFactor * moveSens
+        velocity = if (steering) ((touchX - posX) * touchFollow * moveSens).coerceIn(-maxV, maxV) else 0f
+    } else {
+        // Zone morte : petites inclinaisons ignorées, puis la vitesse repart de 0 au-delà du seuil
+        val effectiveTilt = if (abs(tilt) < deadZone) 0f else tilt - sign(tilt) * deadZone
 
-    // Déplacement gauche/droite (avec la sensibilité choisie) et passage d'un bord à l'autre
-    velocity = -effectiveTilt * speedFactor * moveSens
+        // Déplacement gauche/droite (avec la sensibilité choisie)
+        velocity = -effectiveTilt * speedFactor * moveSens
+    }
+
+    // Passage d'un bord à l'autre
     posX += velocity * dt
     if (width > 0) posX = ((posX % width) + width) % width
 

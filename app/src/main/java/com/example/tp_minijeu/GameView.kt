@@ -44,6 +44,7 @@ class GameView(context: Context) : View(context) {
     internal val prefs = context.getSharedPreferences("reglages", Context.MODE_PRIVATE)
     internal var moveSens = prefs.getFloat("moveSens", 1f)
     internal var micSens = prefs.getFloat("micSens", 1f)
+    internal var touchMode = prefs.getBoolean("touchMode", false)   // false = immersif (accéléromètre), true = tactile (barre)
 
     // ---------- État du jeu ----------
     internal var gameState = GameState.START
@@ -65,6 +66,8 @@ class GameView(context: Context) : View(context) {
     internal var speedCooldown = 0f
     internal var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
     internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 micro
+    internal var steering = false          // mode tactile : le doigt est sur la barre de contrôle
+    internal var touchX = 0f               // mode tactile : position horizontale du doigt
 
     internal val obstacles = mutableListOf<Obstacle>()
     internal val particles = mutableListOf<Particle>()
@@ -83,6 +86,9 @@ class GameView(context: Context) : View(context) {
     internal val primaryButton = RectF()   // "Reprendre" ou "Retour"
     internal val secondaryButton = RectF() // "Menu" (seulement en jeu)
     internal val defaultsButton = RectF()  // "Valeurs par défaut"
+    internal val modeTiltButton = RectF()  // choix du mode "Immersif"
+    internal val modeTouchButton = RectF() // choix du mode "Tactile"
+    internal var controlY = 0f             // hauteur de la barre de contrôle tactile
     internal var panelTop = 0f
     internal var trackLeft = 0f
     internal var trackRight = 0f
@@ -120,6 +126,7 @@ class GameView(context: Context) : View(context) {
         // L'appli passe en arrière-plan (appel, notification...) : on ne fait pas perdre la partie
         if (gameState == GameState.PLAYING) gameState = GameState.PAUSED
         dragging = 0
+        steering = false
         invalidate()
     }
 

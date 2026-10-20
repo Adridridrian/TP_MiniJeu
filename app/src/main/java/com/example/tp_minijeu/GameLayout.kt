@@ -41,15 +41,20 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
     overMenuButton.set(cx - bw, cy + 112f * d, cx + bw, cy + 156f * d)
 
     // Panneau Pause / Paramètres
-    panelTop = maxOf(40f * d, h / 2f - 205f * d)
+    panelTop = maxOf(40f * d, h / 2f - 245f * d)
     trackLeft = cx - hw + 24f * d
     trackRight = cx + hw - 24f * d
-    moveY = panelTop + 120f * d
-    micY = panelTop + 190f * d
-    previewY = panelTop + 218f * d
-    defaultsButton.set(cx - 90f * d, panelTop + 235f * d, cx + 90f * d, panelTop + 267f * d)
-    primaryButton.set(cx - bw, panelTop + 285f * d, cx + bw, panelTop + 329f * d)
-    secondaryButton.set(cx - bw, panelTop + 345f * d, cx + bw, panelTop + 389f * d)
-    pauseCard.set(cx - hw, panelTop, cx + hw, panelTop + 410f * d)
-    settingsCard.set(cx - hw, panelTop, cx + hw, panelTop + 350f * d)
+    modeTiltButton.set(trackLeft, panelTop + 104f * d, cx - 4f * d, panelTop + 140f * d)
+    modeTouchButton.set(cx + 4f * d, panelTop + 104f * d, trackRight, panelTop + 140f * d)
+    moveY = panelTop + 200f * d
+    micY = panelTop + 270f * d
+    previewY = panelTop + 298f * d
+    defaultsButton.set(cx - 90f * d, panelTop + 315f * d, cx + 90f * d, panelTop + 347f * d)
+    primaryButton.set(cx - bw, panelTop + 365f * d, cx + bw, panelTop + 409f * d)
+    secondaryButton.set(cx - bw, panelTop + 425f * d, cx + bw, panelTop + 469f * d)
+    pauseCard.set(cx - hw, panelTop, cx + hw, panelTop + 490f * d)
+    settingsCard.set(cx - hw, panelTop, cx + hw, panelTop + 430f * d)
+
+    // Barre de contrôle tactile, juste au-dessus de la jauge du micro
+    controlY = h - 120f * d
 }

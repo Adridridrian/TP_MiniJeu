@@ -77,6 +77,8 @@ internal class GamePaints(private val d: Float) {
     val sliderFill = fill("#1E88E5")
     val thumbFill = fill("#FFFFFF")
     val thumbEdge = line("#1E88E5", 3f * d)
+    val segmentOnText = text("#FFFFFF", 16f, Paint.Align.CENTER)
+    val segmentOffText = text("#1E88E5", 16f, Paint.Align.CENTER)
 
     // Jauge du micro
     val gaugeTrack = fill("#CFDCE8")
