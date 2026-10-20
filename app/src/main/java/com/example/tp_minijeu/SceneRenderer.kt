@@ -22,7 +22,9 @@ internal fun GameView.drawScene(c: Canvas) {
 
     // Bonhomme (+ sa copie de l'autre côté quand il passe un bord)
     val lean = playerLean()
-    for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
+    // Invincible après un choc : le bonhomme clignote (5 fois par seconde)
+    val hidden = invincible > 0f && (invincible * 10f).toInt() % 2 == 0
+    if (!hidden) for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
         val cx = posX + ox
         if (cx < -60f * d || cx > width + 60f * d) continue
         drawPlayer(c, cx, baseY, lean)

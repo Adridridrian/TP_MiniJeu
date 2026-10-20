@@ -2,6 +2,7 @@ package com.example.tp_minijeu
 
 import android.graphics.PointF
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.sign
 import kotlin.math.sin
 import kotlin.random.Random
@@ -21,6 +22,8 @@ internal fun GameView.resetGame() {
     speedCooldown = 0f
     speedFlash = 0f
     velocity = 0f
+    lives = maxLives
+    invincible = 0f
     steering = false
     posX = width / 2f
 }
@@ -67,7 +70,7 @@ internal fun GameView.updatePlaying(dt: Float) {
     gameTime += dt
     val difficulty = minOf(1f + gameTime / secondsToMax * (maxDifficulty - 1f), maxDifficulty)
 
-    // Son au-dessus de la barre : la vitesse augmente définitivement (jusqu'à la fin de la partie)
+    // Son au-dessus de la barre : la vitesse augmente (jusqu'à la prochaine vie perdue)
     if (speedCooldown > 0f) speedCooldown -= dt
     if (micAvailable && micDisplay > micThreshold && speedCooldown <= 0f && speedMultiplier < maxSpeed) {
         speedMultiplier = minOf(speedMultiplier + speedStep, maxSpeed)
@@ -125,12 +128,37 @@ internal fun GameView.updatePlaying(dt: Float) {
         spawnTimer = (0.5f + Random.nextFloat() * 0.7f) / (difficulty * speedMultiplier)
     }
 
-    val hit = hitsObstacle(baseY, s)
+    // Collision : on perd une vie, puis on est invincible le temps de sortir de l'obstacle
+    if (invincible > 0f) invincible -= dt
+    val hit = if (invincible > 0f) null else hitsObstacle(baseY, s)
     if (hit != null) {
         music.playCrash(hit.isTree)
-        gameState = GameState.GAME_OVER
-        gameOverAt = System.currentTimeMillis()
-        best = maxOf(best, score())
-        velocity = 0f
+        lives--
+        burstSnow()
+        if (lives <= 0) {
+            gameState = GameState.GAME_OVER
+            gameOverAt = System.currentTimeMillis()
+            best = maxOf(best, score())
+            velocity = 0f
+        } else {
+            invincible = invincibleTime
+            // Une vie perdue : la vitesse acquise avec le micro repart de x1
+            speedMultiplier = 1f
+            speedCooldown = 0f
+            speedFlash = 0f
+        }
+    }
+}
+
+/** Gerbe de neige tout autour du bonhomme au moment du choc. */
+internal fun GameView.burstSnow() {
+    repeat(24) {
+        val a = Random.nextFloat() * 6.28f
+        val v = (60f + Random.nextFloat() * 140f) * d
+        particles.add(Particle(
+            posX, baseY + 20f * s,
+            cos(a) * v, sin(a) * v - 40f * d,
+            0.5f
+        ))
     }
 }

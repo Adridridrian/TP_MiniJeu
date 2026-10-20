@@ -8,6 +8,10 @@ internal val deadZone = 0.6f           // inclinaison ignorée (m/s²) : le tél
 internal val maxDifficulty = 1f        // 1f = vitesse constante
 internal val secondsToMax = 45f
 
+// ---------- Vies ----------
+internal val maxLives = 3              // nombre de vies au début de la partie
+internal val invincibleTime = 2f       // secondes d'invincibilité (bonhomme qui clignote) après un choc
+
 // ---------- Collisions ----------
 internal val hitboxGrace = 1f          // tolérance (dp) : il faut toucher l'obstacle d'au moins 1dp pour perdre
 internal val showHitboxes = false      // true = dessine les zones de collision en rouge (pour régler)

@@ -69,11 +69,13 @@ class GameView(context: Context) : View(context) {
     internal var spawnTimer = 1.5f
     internal var sprayAcc = 0f
     internal var micDisplay = 0f           // niveau du micro après sensibilité (affiché par la jauge)
-    internal var speedMultiplier = 1f      // vitesse actuelle (ne redescend jamais pendant une partie)
+    internal var speedMultiplier = 1f      // vitesse actuelle (ne redescend qu'en perdant une vie)
     internal var speedCooldown = 0f
     internal var speedFlash = 0f           // > 0 : la vitesse vient d'augmenter (affichage en rouge)
     internal var dragging = 0              // curseur en cours de glissement : 0 aucun, 1 mouvement, 2 volume
-    internal var steering = false          // mode tactile : le doigt est sur la barre de contrôle
+    internal var lives = maxLives          // vies restantes
+    internal var invincible = 0f           // > 0 : invincible après un choc (secondes restantes)
+    internal var steering = false         // mode tactile : le doigt est sur la barre de contrôle
     internal var touchX = 0f               // mode tactile : position horizontale du doigt
 
     internal val obstacles = mutableListOf<Obstacle>()

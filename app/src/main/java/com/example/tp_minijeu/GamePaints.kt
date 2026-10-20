@@ -59,6 +59,8 @@ internal class GamePaints(private val d: Float) {
     val pill = fill("#E6FFFFFF")
     val pillShadow = fill("#22000000")
     val hudIcon = fill("#1A3A5C")
+    val heartFull = fill("#E53935")
+    val heartEmpty = fill("#CFD8DC")
     val scoreText = text("#1A3A5C", 20f, Paint.Align.LEFT)
     val overlay = fill("#80102030")
     val card = fill("#FFFFFF")
