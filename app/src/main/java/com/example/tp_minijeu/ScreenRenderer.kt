@@ -16,9 +16,13 @@ internal fun GameView.drawCurrentScreen(canvas: Canvas) {
 internal fun GameView.drawStartScreen(c: Canvas) {
     c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paints.bg)
     val cx = width / 2f
-    c.drawText("MINI-JEU", cx, height * 0.18f, paints.titleText)
-    c.drawText("Record : $best m", cx, height * 0.18f + 36f * d, paints.infoText)
-    drawPlayer(c, cx, height * 0.42f, 0f)
+    // Titre sur deux lignes, en bloc de glace
+    val line1 = height * 0.10f + 34f * d
+    val line2 = line1 + 58f * d
+    drawIceTitle(c, "JINGLE", cx, line1)
+    drawIceTitle(c, "RUSH", cx, line2)
+    c.drawText("Record : $best m", cx, line2 + 44f * d, paints.infoText)
+    drawPlayer(c, cx, height * 0.45f, 0f)
 
     // Choix de la difficulté (sensibilité du micro)
     val labels = arrayOf("Facile", "Moyen", "Difficile")

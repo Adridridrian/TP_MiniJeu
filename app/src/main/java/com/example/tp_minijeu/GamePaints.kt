@@ -2,6 +2,7 @@ package com.example.tp_minijeu
 
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 
 /** Tous les pinceaux du jeu. d = 1dp en pixels. */
 internal class GamePaints(private val d: Float) {
@@ -72,6 +73,23 @@ internal class GamePaints(private val d: Float) {
     val buttonAlt = fill("#E3F2FD")
     val buttonAltText = text("#1E88E5", 20f, Paint.Align.CENTER)
     val hintText = text("#1A3A5C", 15f, Paint.Align.CENTER)
+
+    // Titre "Jingle Rush" en bloc de glace (police Roboto Black intégrée à Android)
+    val iceFill = text("#FFFFFF", 54f, Paint.Align.CENTER).apply {
+        typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
+        isFakeBoldText = false
+        letterSpacing = 0.04f
+    }
+    val iceOutline = Paint(iceFill).apply {
+        style = Paint.Style.STROKE; strokeWidth = 5f * d
+        strokeJoin = Paint.Join.ROUND; color = Color.parseColor("#0D3B66")
+    }
+    val iceDepth = Paint(iceOutline).apply {
+        style = Paint.Style.FILL_AND_STROKE; color = Color.parseColor("#0A2C4D")
+    }
+    val icicleFill = fill("#BFE6FF")
+    val icicleEdge = line("#0D3B66", 2f * d)
+    val sparkle = fill("#FFFFFF")
 
     // Paramètres
     val labelText = text("#1A3A5C", 16f, Paint.Align.LEFT)
