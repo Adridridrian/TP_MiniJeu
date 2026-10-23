@@ -69,10 +69,11 @@ internal fun GameView.drawSettingsScreen(c: Canvas) {
 }
 
 internal fun GameView.drawLeaderboardScreen(c: Canvas) {
-    // Fond clair sans voile sombre : le titre et les lignes restent lisibles
+    // Comme l'écran Paramètres : décor, voile sombre, puis la carte
     c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paints.bg)
+    drawFallingSnow(c)
+    c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paints.overlay)
     drawLeaderboardPanel(c)
-    drawFallingSnow(c)          // dessinée en dernier : la neige passe devant tout le classement
 }
 
 internal fun GameView.drawGameOverScreen(c: Canvas) {

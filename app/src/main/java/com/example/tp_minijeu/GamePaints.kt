@@ -73,13 +73,12 @@ internal class GamePaints(private val d: Float) {
     val buttonAlt = fill("#E3F2FD")
     val buttonAltText = text("#1E88E5", 20f, Paint.Align.CENTER)
     val hintText = text("#1A3A5C", 15f, Paint.Align.CENTER)
-    val backArrow = line("#1A3A5C", 3f * d)          // flèche du bouton retour
-    val ice = fill("#E3F2FC")                         // glaçons : remplissage
-    val iceEdge = line("#8DB8D6", 1.2f * d)           // glaçons : contour
-    val iceGlint = line("#FFFFFF", 1.5f * d)          // glaçons : reflet
     val recordText = text("#E65100", 21f, Paint.Align.CENTER)   // "Nouveau record !"
     val rankText = text("#1E88E5", 19f, Paint.Align.CENTER)     // "4e place au classement"
     val rowFill = fill("#F2F4F7")                     // fond d'une ligne du classement (sur carte blanche)
+    val rowEmptyText = text("#A0ACB8", 16f, Paint.Align.LEFT)    // place vide : "#7"
+    val rowEmptyValue = text("#A0ACB8", 16f, Paint.Align.RIGHT)  // place vide : "—"
+    val subtitleText = text("#1E88E5", 15f, Paint.Align.CENTER)  // sous-titre du classement
 
     // Titre "Jingle Rush" en bloc de glace (police Roboto Black intégrée à Android)
     val iceFill = text("#FFFFFF", 54f, Paint.Align.CENTER).apply {

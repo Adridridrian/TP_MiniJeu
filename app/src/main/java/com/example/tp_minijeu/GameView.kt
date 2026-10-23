@@ -87,7 +87,6 @@ class GameView(context: Context) : View(context) {
     internal val obstacles = mutableListOf<Obstacle>()
     internal val particles = mutableListOf<Particle>()
     internal val airFlakes = mutableListOf<Flake>()
-    internal val icicles = mutableListOf<Icicle>()     // glaçons du classement (tirés dans setupLayout)
     internal val trail = ArrayDeque<PointF>()
 
     // ---------- Zones des boutons et du panneau (calculées dans onSizeChanged) ----------
@@ -99,7 +98,8 @@ class GameView(context: Context) : View(context) {
     internal val replayButton = RectF()
     internal val overMenuButton = RectF()
     internal val overCard = RectF()
-    internal val backButton = RectF()
+    internal val leaderboardCard = RectF() // carte du classement
+    internal val backButton = RectF()      // "Retour" du classement
 
     internal val pauseCard = RectF()       // panneau en jeu (2 boutons)
     internal val settingsCard = RectF()    // panneau depuis le menu (1 bouton)
@@ -110,8 +110,8 @@ class GameView(context: Context) : View(context) {
     internal val modeTouchButton = RectF() // choix du mode "Tactile"
     internal var controlY = 0f             // hauteur de la barre de contrôle tactile
 
-    internal var listTop = 0f
-    internal var rowHeight = 0f
+    internal var listTop = 0f              // haut de la 1re ligne du classement
+    internal var rowHeight = 0f            // hauteur d'une ligne du classement (espace compris)
     internal var panelTop = 0f
     internal var trackLeft = 0f
     internal var trackRight = 0f

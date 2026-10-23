@@ -50,30 +50,20 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
     overMenuButton.set(cx - bw, cy + 112f * d, cx + bw, cy + 156f * d)
     overLeaderboardButton.set(cx - bw, cy + 176f * d, cx + bw, cy + 220f * d)
 
-    // Classement : retour en haut à gauche (48dp), carte "Toi" en dessous, puis les 10 lignes
-    backButton.set(16f * d, 40f * d, 64f * d, 88f * d)
-    listTop = 172f * d
-    // 52dp par ligne, réduit si l'écran est trop petit pour afficher les 10 lignes
-    rowHeight = minOf(52f * d, (h - listTop - 24f * d) / 10f)
-
-    // Glaçons sous le cadre du classement. Tirés au hasard UNE SEULE FOIS ici :
-    // si on les tirait dans la fonction de dessin, ils changeraient à chaque image et clignoteraient.
-    // On les place de gauche à droite, en évitant les coins arrondis du cadre (rayon 24dp).
-    icicles.clear()
-    val frameLeft = cx - hw - 8f * d
-    val frameRight = cx + hw + 8f * d
-    var ix = frameLeft + 26f * d
-    while (ix < frameRight - 26f * d) {
-        val halfWidth = (3f + Random.nextFloat() * 3f) * d       // base de 6 à 12dp
-        val length = (8f + Random.nextFloat() * 12f) * d          // longueur de 8 à 20dp
-        icicles.add(Icicle(ix, halfWidth, length))
-        ix += 2f * halfWidth + (3f + Random.nextFloat() * 9f) * d // espace irrégulier avant le suivant
-    }
-
     // Panneau Pause / Paramètres
     panelTop = maxOf(40f * d, h / 2f - 266f * d)
     trackLeft = cx - hw + 24f * d
     trackRight = cx + hw - 24f * d
+
+    // Classement : même carte que les paramètres. En-tête (titre + sous-titre) 104dp,
+    // 10 lignes (44dp, réduites si l'écran est petit), puis le bouton "Retour" (20 + 44 + 20dp)
+    rowHeight = minOf(44f * d, (h - 48f * d - 188f * d) / LEADERBOARD_ROWS)
+    val boardHeight = 104f * d + LEADERBOARD_ROWS * rowHeight + 84f * d
+    val boardTop = maxOf(24f * d, (h - boardHeight) / 2f)
+    leaderboardCard.set(cx - hw, boardTop, cx + hw, boardTop + boardHeight)
+    listTop = boardTop + 104f * d
+    val listBottom = listTop + LEADERBOARD_ROWS * rowHeight
+    backButton.set(cx - bw, listBottom + 14f * d, cx + bw, listBottom + 58f * d)
     modeTiltButton.set(trackLeft, panelTop + 104f * d, cx - 4f * d, panelTop + 140f * d)
     modeTouchButton.set(cx + 4f * d, panelTop + 104f * d, trackRight, panelTop + 140f * d)
     moveY = panelTop + 200f * d
