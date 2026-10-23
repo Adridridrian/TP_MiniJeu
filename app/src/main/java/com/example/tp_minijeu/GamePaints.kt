@@ -104,6 +104,11 @@ internal class GamePaints(private val d: Float) {
     val sliderFill = fill("#1E88E5")
     val thumbFill = fill("#FFFFFF")
     val thumbEdge = line("#1E88E5", 3f * d)
+    // Choix de la difficulté : couleur du segment choisi (vert facile, orange moyen, rouge difficile)
+    val difficultyFills = arrayOf(fill("#43A047"), fill("#FB8C00"), fill("#E53935"))
+    val difficultyOnText = text("#FFFFFF", 13f, Paint.Align.CENTER)
+    val difficultyOffText = text("#1A3A5C", 13f, Paint.Align.CENTER)
+    val difficultyEmoji = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 20f * d; textAlign = Paint.Align.CENTER }
     val segmentOnText = text("#FFFFFF", 16f, Paint.Align.CENTER)
     val segmentOffText = text("#1E88E5", 16f, Paint.Align.CENTER)
 

@@ -17,7 +17,8 @@ import android.view.View
  *  - ScreenRenderer.kt    : dessin des différents écrans
  *  - TitleRenderer.kt     : titre "Jingle Rush" en bloc de glace
  *  - SceneRenderer.kt     : dessin de la piste
- *  - SnowmanRenderer.kt   : dessin du bonhomme de neige
+ *  - SnowmanRenderer.kt   : dessin du bonhomme de neige (morceau par morceau)
+ *  - SnowmanCrash.kt      : animation du bonhomme qui se démonte à la dernière vie
  *  - ObstacleRenderer.kt  : dessin des sapins et rochers
  *  - HudRenderer.kt       : score et jauge du micro
  *  - SettingsPanel.kt     : panneau pause / paramètres
@@ -88,6 +89,8 @@ class GameView(context: Context) : View(context) {
     internal val particles = mutableListOf<Particle>()
     internal val airFlakes = mutableListOf<Flake>()
     internal val trail = ArrayDeque<PointF>()
+    internal val crashParts = mutableListOf<SnowmanPart>()   // morceaux du bonhomme (animation de fin)
+    internal var crashTime = 0f                              // temps écoulé depuis le début de l'animation
 
     // ---------- Zones des boutons et du panneau (calculées dans onSizeChanged) ----------
     internal val playButton = RectF()

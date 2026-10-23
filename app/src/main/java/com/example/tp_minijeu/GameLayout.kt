@@ -32,23 +32,22 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
 
     // Accueil
     playButton.set(cx - bw, h * 0.62f, cx + bw, h * 0.62f + 56f * d)
-    settingsButton.set(cx - bw, h * 0.62f + 72f * d, cx + bw, h * 0.62f + 128f * d)
-    startLeaderboardButton.set(cx - bw, h * 0.62f + 144f * d, cx + bw, h * 0.62f + 200f * d)
-    // Difficulté : 3 boutons côte à côte au-dessus de "Jouer"
+    startLeaderboardButton.set(cx - bw, h * 0.62f + 72f * d, cx + bw, h * 0.62f + 128f * d)
+    settingsButton.set(cx - bw, h * 0.62f + 144f * d, cx + bw, h * 0.62f + 200f * d)   // Paramètres en dernier
+    // Difficulté : un sélecteur en 3 segments collés, au-dessus de "Jouer" (emoji + libellé)
     val dl = cx - hw + 24f * d
-    val gap = 6f * d
-    val segW = (2f * (hw - 24f * d) - 2f * gap) / 3f
+    val segW = 2f * (hw - 24f * d) / 3f
     difficultyButtons.forEachIndexed { i, r ->
-        val l = dl + i * (segW + gap)
-        r.set(l, h * 0.62f - 52f * d, l + segW, h * 0.62f - 16f * d)
+        val l = dl + i * segW
+        r.set(l, h * 0.62f - 66f * d, l + segW, h * 0.62f - 14f * d)
     }
 
     // Fin de partie
     val ow = minOf(140f * d, w / 2f - 20f * d)
     overCard.set(cx - ow, cy - 115f * d, cx + ow, cy + 236f * d)
     replayButton.set(cx - bw, cy + 48f * d, cx + bw, cy + 92f * d)
-    overMenuButton.set(cx - bw, cy + 112f * d, cx + bw, cy + 156f * d)
-    overLeaderboardButton.set(cx - bw, cy + 176f * d, cx + bw, cy + 220f * d)
+    overLeaderboardButton.set(cx - bw, cy + 112f * d, cx + bw, cy + 156f * d)
+    overMenuButton.set(cx - bw, cy + 176f * d, cx + bw, cy + 220f * d)   // Menu en dernier
 
     // Panneau Pause / Paramètres
     panelTop = maxOf(40f * d, h / 2f - 266f * d)

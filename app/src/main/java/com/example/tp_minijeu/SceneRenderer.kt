@@ -22,8 +22,11 @@ internal fun GameView.drawScene(c: Canvas) {
 
     // Bonhomme (+ sa copie de l'autre côté quand il passe un bord)
     val lean = playerLean()
-    // Invincible après un choc : le bonhomme clignote (5 fois par seconde)
-    val hidden = invincible > 0f && (invincible * 10f).toInt() % 2 == 0
+    // Invincible après un choc : le bonhomme clignote (5 fois par seconde).
+    // Après la dernière vie, il est démonté : on dessine ses morceaux à la place.
+    val broken = gameState == GameState.CRASHING || gameState == GameState.GAME_OVER
+    if (broken) drawCrashParts(c)
+    val hidden = broken || (invincible > 0f && (invincible * 10f).toInt() % 2 == 0)
     if (!hidden) for (ox in floatArrayOf(0f, -width.toFloat(), width.toFloat())) {
         val cx = posX + ox
         if (cx < -60f * d || cx > width + 60f * d) continue

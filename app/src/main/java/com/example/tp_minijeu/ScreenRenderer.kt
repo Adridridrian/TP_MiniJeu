@@ -11,6 +11,7 @@ internal fun GameView.drawCurrentScreen(canvas: Canvas) {
         GameState.SETTINGS -> drawSettingsScreen(canvas)
         GameState.GAME_OVER -> drawGameOverScreen(canvas)
         GameState.LEADERBOARD -> drawLeaderboardScreen(canvas)
+        GameState.CRASHING -> { drawScene(canvas); drawHud(canvas) }   // animation de fin (SnowmanCrash.kt)
     }
 }
 
@@ -25,17 +26,42 @@ internal fun GameView.drawStartScreen(c: Canvas) {
     c.drawText("Record : $best m", cx, line2 + 44f * d, paints.infoText)
     drawPlayer(c, cx, height * 0.45f, 0f)
 
-    // Choix de la difficulté (sensibilité du micro)
-    val labels = arrayOf("Facile", "Moyen", "Difficile")
-    difficultyButtons.forEachIndexed { i, r ->
-        if (i == difficulty) drawButton(c, r, labels[i], paints.button, paints.segmentOnText)
-        else drawButton(c, r, labels[i], paints.buttonAlt, paints.segmentOffText)
-    }
+    drawDifficultyPicker(c)
 
     drawButton(c, playButton, "Jouer", paints.button, paints.buttonText)
-    drawButton(c, settingsButton, "Paramètres", paints.buttonAlt, paints.buttonAltText)
     drawButton(c, startLeaderboardButton, "Classement", paints.buttonAlt, paints.buttonAltText)
+    drawButton(c, settingsButton, "Paramètres", paints.buttonAlt, paints.buttonAltText)
     drawFallingSnow(c)
+}
+
+private val DIFFICULTY_LABELS = arrayOf("Facile", "Moyen", "Difficile")
+private val DIFFICULTY_EMOJIS = arrayOf("😊", "😬", "🔥")
+
+/**
+ * Choix de la difficulté (sensibilité du micro) : une pastille blanche coupée en 3 segments.
+ * Le segment choisi est rempli de sa couleur (vert / orange / rouge), les autres sont estompés.
+ */
+internal fun GameView.drawDifficultyPicker(c: Canvas) {
+    val first = difficultyButtons.first()
+    val last = difficultyButtons.last()
+    val rad = first.height() / 2f
+    tmpRect.set(first.left, first.top + 3f * d, last.right, first.bottom + 3f * d)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pillShadow)
+    tmpRect.set(first.left, first.top, last.right, first.bottom)
+    c.drawRoundRect(tmpRect, rad, rad, paints.pill)
+
+    val inset = 4f * d
+    difficultyButtons.forEachIndexed { i, r ->
+        val selected = i == difficulty
+        if (selected) {
+            tmpRect.set(r.left + inset, r.top + inset, r.right - inset, r.bottom - inset)
+            c.drawRoundRect(tmpRect, rad - inset, rad - inset, paints.difficultyFills[i])
+        }
+        paints.difficultyEmoji.alpha = if (selected) 255 else 140
+        c.drawText(DIFFICULTY_EMOJIS[i], r.centerX(), r.top + 26f * d, paints.difficultyEmoji)
+        c.drawText(DIFFICULTY_LABELS[i], r.centerX(), r.bottom - 11f * d,
+            if (selected) paints.difficultyOnText else paints.difficultyOffText)
+    }
 }
 
 internal fun GameView.drawGame(c: Canvas) {
@@ -95,6 +121,6 @@ internal fun GameView.drawGameOverScreen(c: Canvas) {
         c.drawText("${rank + 1}e place au classement", cx, cy + 28f * d, paints.rankText)
     }
     drawButton(c, replayButton, "Rejouer", paints.button, paints.buttonText)
-    drawButton(c, overMenuButton, "Menu", paints.buttonAlt, paints.buttonAltText)
     drawButton(c, overLeaderboardButton, "Classement", paints.buttonAlt, paints.buttonAltText)
+    drawButton(c, overMenuButton, "Menu", paints.buttonAlt, paints.buttonAltText)
 }

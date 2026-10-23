@@ -19,26 +19,43 @@ internal fun GameView.shadedBall(c: Canvas, cx: Float, cy: Float, r: Float) {
     c.drawCircle(cx, cy, r, paints.ballEdge)
 }
 
+/**
+ * Le bonhomme entier, (x, y) = centre de la boule du bas.
+ * Chaque morceau a sa propre fonction : l'animation de chute (SnowmanCrash.kt) les dessine séparément.
+ */
 internal fun GameView.drawSnowman(c: Canvas, x: Float, y: Float) {
-    // Skis
-    for (side in intArrayOf(-1, 1)) {
-        val sx = x + side * 14f * d
-        c.drawRoundRect(RectF(sx - 5f * d, y - 15f * d, sx + 5f * d, y + 55f * d), 5f * d, 5f * d, paints.ski)
-        c.drawLine(sx - 1.5f * d, y - 10f * d, sx - 1.5f * d, y + 48f * d, paints.skiShine)
-        c.drawRect(sx - 5.5f * d, y + 8f * d, sx + 5.5f * d, y + 14f * d, paints.binding)
-    }
+    drawSki(c, x, y, -1)
+    drawSki(c, x, y, 1)
+    drawBottomBall(c, x, y)
+    drawMiddleBall(c, x, y)
+    drawHead(c, x, y)
+    drawScarf(c, x, y)
+    drawHat(c, x, y)
+}
 
-    // Corps
+/** Un ski : side = -1 gauche, 1 droite. */
+internal fun GameView.drawSki(c: Canvas, x: Float, y: Float, side: Int) {
+    val sx = x + side * 14f * d
+    c.drawRoundRect(RectF(sx - 5f * d, y - 15f * d, sx + 5f * d, y + 55f * d), 5f * d, 5f * d, paints.ski)
+    c.drawLine(sx - 1.5f * d, y - 10f * d, sx - 1.5f * d, y + 48f * d, paints.skiShine)
+    c.drawRect(sx - 5.5f * d, y + 8f * d, sx + 5.5f * d, y + 14f * d, paints.binding)
+}
+
+internal fun GameView.drawBottomBall(c: Canvas, x: Float, y: Float) {
     shadedBall(c, x, y, 30f * d)
-    shadedBall(c, x, y - 42f * d, 22f * d)
+}
 
-    // Boutons en charbon
+/** Boule du milieu avec ses boutons en charbon. */
+internal fun GameView.drawMiddleBall(c: Canvas, x: Float, y: Float) {
+    shadedBall(c, x, y - 42f * d, 22f * d)
     for (by in floatArrayOf(y - 48f * d, y - 38f * d)) {
         c.drawCircle(x, by, 2.6f * d, paints.coal)
         c.drawCircle(x - 0.8f * d, by - 0.8f * d, 0.8f * d, paints.glint)
     }
+}
 
-    // Tête
+/** Tête : boule, joues, yeux, sourire et nez carotte. */
+internal fun GameView.drawHead(c: Canvas, x: Float, y: Float) {
     shadedBall(c, x, y - 82f * d, 17f * d)
 
     // Joues
@@ -65,8 +82,10 @@ internal fun GameView.drawSnowman(c: Canvas, x: Float, y: Float) {
     c.drawPath(nose, paints.carrot)
     c.drawLine(x + 4f * d, y - 81.5f * d, x + 4f * d, y - 78.5f * d, paints.carrotLine)
     c.drawLine(x + 8f * d, y - 80.8f * d, x + 8f * d, y - 78.8f * d, paints.carrotLine)
+}
 
-    // Écharpe
+/** Écharpe et son pan (entre la tête et la boule du milieu). */
+internal fun GameView.drawScarf(c: Canvas, x: Float, y: Float) {
     c.drawRoundRect(RectF(x - 18f * d, y - 67f * d, x + 18f * d, y - 58f * d), 4f * d, 4f * d, paints.scarf)
     c.drawRoundRect(RectF(x - 17f * d, y - 61f * d, x + 17f * d, y - 58.5f * d), 2f * d, 2f * d, paints.scarfDark)
     c.drawRect(x - 9f * d, y - 67f * d, x - 6f * d, y - 58f * d, paints.scarfStripe)
@@ -77,8 +96,10 @@ internal fun GameView.drawSnowman(c: Canvas, x: Float, y: Float) {
     for (fx in floatArrayOf(6.5f, 9f, 11.5f)) {
         c.drawLine(x + fx * d, y - 43f * d, x + fx * d, y - 39f * d, paints.scarfLine)
     }
+}
 
-    // Chapeau
+/** Chapeau haut-de-forme. */
+internal fun GameView.drawHat(c: Canvas, x: Float, y: Float) {
     c.drawRoundRect(RectF(x - 12f * d, y - 120f * d, x + 12f * d, y - 98f * d), 2f * d, 2f * d, paints.hat)
     c.drawRect(x - 12f * d, y - 104f * d, x + 12f * d, y - 100f * d, paints.hatBand)
     c.drawRoundRect(RectF(x - 20f * d, y - 100f * d, x + 20f * d, y - 95f * d), 2.5f * d, 2.5f * d, paints.hat)

@@ -115,5 +115,6 @@ internal fun GameView.onTouchDown(x: Float, y: Float) {
                 gameState = previousState
             }
         }
+        GameState.CRASHING -> {}   // pendant l'animation de fin, les touches sont ignorées
     }
 }

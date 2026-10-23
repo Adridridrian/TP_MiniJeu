@@ -52,6 +52,7 @@ internal fun GameView.update() {
     if (speedFlash > 0f) speedFlash -= dt
 
     if (gameState == GameState.PLAYING) updatePlaying(dt)
+    else if (gameState == GameState.CRASHING) updateCrash(dt)
 
     // Gerbes de neige (finissent de retomber après la chute)
     val dyNow = if (gameState == GameState.PLAYING) scrollSpeed * dt else 0f
@@ -138,11 +139,10 @@ internal fun GameView.updatePlaying(dt: Float) {
         burstSnow()
         if (lives <= 0) {
             // Plus de vie : fin de partie, le score entre (ou non) dans le classement
-            gameState = GameState.GAME_OVER
-            gameOverAt = System.currentTimeMillis()
             lastRank = leaderboard.add(score())                      // 0 = 1re place, null = hors top 10
             best = leaderboard.entries.firstOrNull()?.first ?: 0     // record = 1re ligne du classement
             velocity = 0f
+            startCrash()        // le bonhomme se démonte, puis l'écran "Perdu !" s'affiche (SnowmanCrash.kt)
         } else {
             invincible = invincibleTime
             // Une vie perdue : la vitesse acquise avec le micro repart de x1
