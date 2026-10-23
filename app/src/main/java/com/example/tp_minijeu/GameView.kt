@@ -15,6 +15,7 @@ import android.view.View
  *  - GameUpdate.kt        : mise à jour du jeu à chaque image
  *  - ObstacleLogic.kt     : apparition des obstacles et collisions
  *  - ScreenRenderer.kt    : dessin des différents écrans
+ *  - TitleRenderer.kt     : titre "Jingle Rush" en bloc de glace
  *  - SceneRenderer.kt     : dessin de la piste
  *  - SnowmanRenderer.kt   : dessin du bonhomme de neige
  *  - ObstacleRenderer.kt  : dessin des sapins et rochers
