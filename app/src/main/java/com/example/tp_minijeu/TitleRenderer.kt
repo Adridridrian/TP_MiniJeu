@@ -3,6 +3,7 @@ package com.example.tp_minijeu
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
+import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 
@@ -64,13 +65,13 @@ private fun GameView.drawIcicle(c: Canvas, x: Float, baseline: Float, len: Float
     c.drawPath(path, paints.icicleEdge)
 }
 
-/** Petite étoile à 4 branches. */
-private fun GameView.drawSparkle(c: Canvas, x: Float, y: Float, r: Float) {
+/** Petite étoile à 4 branches (blanche par défaut). */
+internal fun GameView.drawSparkle(c: Canvas, x: Float, y: Float, r: Float, paint: Paint = paints.sparkle) {
     val k = r * 0.22f
     val path = Path().apply {
         moveTo(x, y - r); quadTo(x + k, y - k, x + r, y)
         quadTo(x + k, y + k, x, y + r); quadTo(x - k, y + k, x - r, y)
         quadTo(x - k, y - k, x, y - r); close()
     }
-    c.drawPath(path, paints.sparkle)
+    c.drawPath(path, paint)
 }

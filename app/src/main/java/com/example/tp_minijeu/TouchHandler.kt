@@ -28,7 +28,11 @@ internal fun GameView.handleTouch(event: MotionEvent): Boolean {
 internal fun GameView.onTouchDown(x: Float, y: Float) {
     when (gameState) {
         GameState.START -> {
-            if (playButton.contains(x, y)) {
+            if (titleArea.contains(x, y)) {
+                // Easter egg : toucher le titre transforme le bonhomme en Père Noël (et inversement)
+                performClick()
+                startTransform()
+            } else if (playButton.contains(x, y)) {
                 performClick()
                 resetGame()
                 gameState = GameState.PLAYING

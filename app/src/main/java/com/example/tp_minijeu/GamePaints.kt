@@ -47,6 +47,28 @@ internal class GamePaints(private val d: Float) {
     val hatBand = fill("#D32F2F")
     val hatShine = line("#5A5A5A", 1.5f * d)
 
+    // Père Noël et son traîneau (skin secret)
+    val santaRed = fill("#D32F2F")
+    val santaRedDark = fill("#B71C1C")
+    val santaBelly = Paint(Paint.ANTI_ALIAS_FLAG)        // dégradé posé au moment du dessin
+    val fur = fill("#FAFAFA")
+    val furEdge = line("#D7DCE0", 1f * d)
+    val skin = fill("#FFCCBC")
+    val santaNose = fill("#E57373")
+    val belt = fill("#212121")
+    val gold = fill("#FFCA28")
+    val goldLine = line("#FFB300", 2f * d)
+    val runner = fill("#FFB300")
+    val runnerShine = line("#FFE082", 1.2f * d)
+    val runnerCurl = line("#FFB300", 3f * d)
+    val sleighBack = fill("#8E1B1B")
+    val sleighFront = fill("#C62828")
+    val sleighShade = fill("#9A1B1B")
+    val mitten = fill("#1B5E20")
+    val giftColors = arrayOf(fill("#2E7D32"), fill("#1565C0"))
+    val ribbonColors = arrayOf(fill("#FFD54F"), fill("#E53935"))
+    val magicSparkle = fill("#FFD54F")                  // étoiles dorées de la transformation
+
     // Obstacles
     val trunk = fill("#5D4037")
     val treeGreen = fill("#2E7D32")

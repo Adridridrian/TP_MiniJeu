@@ -30,7 +30,10 @@ internal fun GameView.setupLayout(w: Int, h: Int) {
     val hw = minOf(160f * d, w / 2f - 20f * d)
     val bw = minOf(140f * d, w / 2f - 20f * d) * 0.65f
 
-    // Accueil
+    // Accueil : titre sur deux lignes (zone à toucher pour l'easter egg), puis les boutons
+    titleY1 = h * 0.10f + 34f * d
+    titleY2 = titleY1 + 58f * d
+    titleArea.set(cx - hw, titleY1 - 50f * d, cx + hw, titleY2 + 20f * d)
     playButton.set(cx - bw, h * 0.62f, cx + bw, h * 0.62f + 56f * d)
     startLeaderboardButton.set(cx - bw, h * 0.62f + 72f * d, cx + bw, h * 0.62f + 128f * d)
     settingsButton.set(cx - bw, h * 0.62f + 144f * d, cx + bw, h * 0.62f + 200f * d)   // Paramètres en dernier

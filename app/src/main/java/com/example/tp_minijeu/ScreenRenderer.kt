@@ -18,13 +18,21 @@ internal fun GameView.drawCurrentScreen(canvas: Canvas) {
 internal fun GameView.drawStartScreen(c: Canvas) {
     c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paints.bg)
     val cx = width / 2f
-    // Titre sur deux lignes, en bloc de glace
-    val line1 = height * 0.10f + 34f * d
-    val line2 = line1 + 58f * d
-    drawIceTitle(c, "JINGLE", cx, line1)
-    drawIceTitle(c, "RUSH", cx, line2)
-    c.drawText("Record : $best m", cx, line2 + 44f * d, paints.infoText)
-    drawPlayer(c, cx, height * 0.45f, 0f)
+    // Titre sur deux lignes, en bloc de glace (le toucher transforme le perso : TransformAnimation.kt)
+    drawIceTitle(c, "JINGLE", cx, titleY1)
+    drawIceTitle(c, "RUSH", cx, titleY2)
+    c.drawText("Record : $best m", cx, titleY2 + 44f * d, paints.infoText)
+
+    // Le perso, qui tourne et change de taille pendant la transformation
+    val py = startPlayerY()
+    val (scale, spin) = transformPose()
+    val pivotY = py - 35f * s                    // milieu du corps
+    c.save()
+    c.rotate(spin, cx, pivotY)
+    c.scale(scale, scale, cx, pivotY)
+    drawPlayer(c, cx, py, 0f)
+    c.restore()
+    drawMagicPuff(c)
 
     drawDifficultyPicker(c)
 

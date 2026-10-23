@@ -18,7 +18,10 @@ import android.view.View
  *  - TitleRenderer.kt     : titre "Jingle Rush" en bloc de glace
  *  - SceneRenderer.kt     : dessin de la piste
  *  - SnowmanRenderer.kt   : dessin du bonhomme de neige (morceau par morceau)
- *  - SnowmanCrash.kt      : animation du bonhomme qui se démonte à la dernière vie
+ *  - SnowmanCrash.kt      : animation du perso qui se démonte à la dernière vie
+ *  - SantaRenderer.kt     : skin secret du Père Noël dans son traîneau
+ *  - TransformAnimation.kt: easter egg (toucher le titre) et animation de transformation
+ *  - SoundEffects.kt      : bruitages synthétisés (chocs, pop, trombone, ho ho ho...)
  *  - ObstacleRenderer.kt  : dessin des sapins et rochers
  *  - HudRenderer.kt       : score et jauge du micro
  *  - SettingsPanel.kt     : panneau pause / paramètres
@@ -89,6 +92,9 @@ class GameView(context: Context) : View(context) {
     internal val particles = mutableListOf<Particle>()
     internal val airFlakes = mutableListOf<Flake>()
     internal val trail = ArrayDeque<PointF>()
+    internal val magicSparkles = mutableListOf<Particle>()   // étoiles dorées de la transformation
+    internal var transformTime = -1f                         // animation de transformation : -1 = aucune
+    internal var transformSwitched = false                   // le skin a déjà changé pendant l'animation
     internal val crashParts = mutableListOf<SnowmanPart>()   // morceaux du bonhomme (animation de fin)
     internal var crashTime = 0f                              // temps écoulé depuis le début de l'animation
 
@@ -101,6 +107,9 @@ class GameView(context: Context) : View(context) {
     internal val replayButton = RectF()
     internal val overMenuButton = RectF()
     internal val overCard = RectF()
+    internal val titleArea = RectF()       // titre de l'accueil : le toucher déclenche l'easter egg
+    internal var titleY1 = 0f              // lignes de base du titre "JINGLE" / "RUSH"
+    internal var titleY2 = 0f
     internal val leaderboardCard = RectF() // carte du classement
     internal val backButton = RectF()      // "Retour" du classement
 

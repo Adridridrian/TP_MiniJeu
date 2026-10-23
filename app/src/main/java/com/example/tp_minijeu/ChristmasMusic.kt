@@ -10,7 +10,6 @@ import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tanh
-import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.random.Random
 
 /**
@@ -29,12 +28,12 @@ internal class ChristmasMusic {
     @Volatile private var running = false
     private var thread: Thread? = null
 
-    // Bruitages demandés par le jeu, joués par le thread audio dès le prochain bloc (~5 ms)
-    private val pendingSfx = ConcurrentLinkedQueue<Kind>()
+    // Bruitages (SoundEffects.kt) : mixés avec la musique, hors volume de la musique
+    private val effects = SoundEffects(RATE)
 
-    /** Bruit d'impact contre un obstacle (sapin ou rocher). */
-    fun playCrash(isTree: Boolean) {
-        if (running) pendingSfx.add(if (isTree) Kind.CRASH_TREE else Kind.CRASH_ROCK)
+    /** Joue un bruitage dès le prochain bloc audio (~5 ms), ou après delay secondes. */
+    fun play(sfx: Sfx, delay: Float = 0f, volume: Float = 1f) {
+        if (running) effects.play(sfx, delay, volume)
     }
 
     fun start() {
@@ -138,7 +137,7 @@ internal class ChristmasMusic {
     }
 
     // ======================= SYNTHÉ =======================
-    private enum class Kind { KICK, SNARE, JINGLE, LEAD, BELL, BASS, CRASH_TREE, CRASH_ROCK }
+    private enum class Kind { KICK, SNARE, JINGLE, LEAD, BELL, BASS }
 
     /**
      * Un son en cours.
@@ -168,7 +167,6 @@ internal class ChristmasMusic {
     }
 
     private val voices = mutableListOf<Voice>()
-    private val sfx = mutableListOf<Voice>()      // bruitages : mixés à part, hors volume de la musique
     private var step = 0
     private var sampleInStep = 0
     private var samplesPerStep = 1
@@ -264,36 +262,11 @@ internal class ChristmasMusic {
                 val attack = (t / 0.01).coerceAtMost(1.0)
                 (v.lowpass * 0.8 + sub * 0.7) * attack * v.releaseLevel()
             }
-            Kind.CRASH_TREE -> {
-                // Choc sourd dans le tronc + branches qui craquent + paquet de neige qui tombe
-                val thudPhase = 2 * PI * (55 * t + 90 * 0.04 * (1 - exp(-t / 0.04)))
-                val thud = sin(thudPhase) * exp(-t / 0.18)
-                val n = Random.nextDouble(-1.0, 1.0)
-                val crackle = (n - v.prevNoise) * exp(-t / 0.05) * (if (Random.nextDouble() < 0.15) 1.0 else 0.3)
-                v.prevNoise = n
-                v.lowpass += 0.06 * (n - v.lowpass)            // bruit étouffé = neige
-                val snow = v.lowpass * 4 * exp(-t / 0.35) * (t / 0.03).coerceAtMost(1.0)
-                thud * 0.9 + crackle * 0.5 + snow * 0.6
-            }
-            Kind.CRASH_ROCK -> {
-                // Impact dur : claquement aigu + coup grave + éclats de pierre
-                val hitPhase = 2 * PI * (70 * t + 160 * 0.025 * (1 - exp(-t / 0.025)))
-                val hit = sin(hitPhase) * exp(-t / 0.12)
-                val n = Random.nextDouble(-1.0, 1.0)
-                val crack = (n - v.prevNoise) * exp(-t / 0.03)
-                v.prevNoise = n
-                v.lowpass += 0.15 * (n - v.lowpass)
-                val debris = v.lowpass * 2.5 * exp(-t / 0.2) * (if (Random.nextDouble() < 0.08) 1.0 else 0.2)
-                hit * 0.9 + crack * 0.7 + debris * 0.5
-            }
         }
     }
 
     private fun render(out: ShortArray) {
-        while (true) {
-            val kind = pendingSfx.poll() ?: break
-            sfx.add(Voice(kind, 0.0, 1f, length = RATE * 7 / 10))
-        }
+        effects.collect()
 
         for (i in out.indices) {
             if (sampleInStep == 0) triggerStep()
@@ -308,17 +281,8 @@ internal class ChristmasMusic {
                 v.t++
                 if (v.finished) it.remove()
             }
-            var effects = 0.0
-            val fx = sfx.iterator()
-            while (fx.hasNext()) {
-                val v = fx.next()
-                effects += voiceSample(v) * v.gain
-                v.t++
-                if (v.finished) fx.remove()
-            }
-
             // Saturation douce pour éviter de grésiller quand tout se superpose
-            val sample = (tanh(mix * 0.9) * volume + tanh(effects) * sfxVolume).coerceIn(-1.0, 1.0)
+            val sample = (tanh(mix * 0.9) * volume + tanh(effects.next()) * sfxVolume).coerceIn(-1.0, 1.0)
             out[i] = (sample * 32767 * 0.8).toInt().toShort()
         }
     }

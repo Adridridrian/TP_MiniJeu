@@ -60,7 +60,7 @@ internal fun GameView.drawPlayer(c: Canvas, cx: Float, y: Float, lean: Float) {
     c.save()
     c.rotate(lean, cx, y + 20f * s)
     c.scale(taille, taille, cx, y)
-    drawSnowman(c, cx, y)
+    if (SantaSkin.enabled) drawSantaSleigh(c, cx, y) else drawSnowman(c, cx, y)   // skin secret
     c.restore()
 }
 

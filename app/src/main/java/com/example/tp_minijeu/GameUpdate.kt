@@ -12,6 +12,7 @@ internal fun GameView.score() = (distance / (20f * d)).toInt()
 internal fun GameView.resetGame() {
     obstacles.clear()
     particles.clear()
+    magicSparkles.clear()
     trail.clear()
     distance = 0f
     gameTime = 0f
@@ -53,6 +54,7 @@ internal fun GameView.update() {
 
     if (gameState == GameState.PLAYING) updatePlaying(dt)
     else if (gameState == GameState.CRASHING) updateCrash(dt)
+    updateTransform(dt)        // easter egg : transformation bonhomme <-> Père Noël
 
     // Gerbes de neige (finissent de retomber après la chute)
     val dyNow = if (gameState == GameState.PLAYING) scrollSpeed * dt else 0f
@@ -78,6 +80,7 @@ internal fun GameView.updatePlaying(dt: Float) {
         speedMultiplier = minOf(speedMultiplier + speedStep, maxSpeed)
         speedCooldown = speedCooldownTime
         speedFlash = 0.6f
+        music.play(Sfx.WHOOSH)          // accompagne l'affichage en rouge de la nouvelle vitesse
     }
     scrollSpeed = baseScroll * timeRamp * speedMultiplier
 
@@ -134,7 +137,7 @@ internal fun GameView.updatePlaying(dt: Float) {
     if (invincible > 0f) invincible -= dt
     val hit = if (invincible > 0f) null else hitsObstacle(baseY, s)
     if (hit != null) {
-        music.playCrash(hit.isTree)
+        music.play(if (hit.isTree) Sfx.CRASH_TREE else Sfx.CRASH_ROCK)
         lives--
         burstSnow()
         if (lives <= 0) {
